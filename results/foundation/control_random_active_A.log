@@ -1,0 +1,25 @@
+dimension de caracteristicas: 15372
+semilla 42: MAE 6.640  salto 2.894  correccion 0.045  tipicidad 0.148  (100 ep.)
+semilla 1: MAE 7.372  salto 2.626  correccion -0.048  tipicidad 0.084  (80 ep.)
+semilla 7: MAE 6.875  salto 2.506  correccion -0.004  tipicidad 0.105  (100 ep.)
+semilla 123: MAE 7.855  salto 2.873  correccion -0.063  tipicidad 0.039  (46 ep.)
+semilla 2024: MAE 7.425  salto 2.791  correccion -0.015  tipicidad 0.062  (67 ep.)
+model                       random
+mae_deg_mean                 7.233
+mae_deg_std                  0.481
+mae_deg_ensemble             6.656
+endpoint_jump_deg_mean       2.738
+endpoint_jump_deg_std        0.167
+endpoint_jump_deg_ensemble   1.587
+slope_jump_deg_mean          4.282
+slope_jump_deg_std           0.515
+slope_jump_deg_ensemble      3.855
+correction_gain_mean        -0.017
+correction_gain_std          0.042
+correction_gain_ensemble     0.045
+typicality_gain_mean         0.087
+typicality_gain_std          0.042
+typicality_gain_ensemble     0.153
+intervention_deg_mean        9.336
+intervention_deg_std         0.228
+intervention_deg_ensemble    8.818

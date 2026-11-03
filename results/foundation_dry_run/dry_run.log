@@ -1,0 +1,28 @@
+verificacion de pesos (error de pronostico de una onda seno): 1.877
+bloque -1 mean     wd 0: MAE validacion 9.656  dim 7692
+bloque -1 mean     wd 0.001: MAE validacion 9.658  dim 7692
+bloque -1 meanlast wd 0: MAE validacion 10.797  dim 15372
+bloque -1 meanlast wd 0.001: MAE validacion 10.779  dim 15372
+bloque  9 mean     wd 0: MAE validacion 9.427  dim 7692
+bloque  9 mean     wd 0.001: MAE validacion 9.414  dim 7692
+bloque  9 meanlast wd 0: MAE validacion 10.170  dim 15372
+bloque  9 meanlast wd 0.001: MAE validacion 10.231  dim 15372
+configuracion elegida: bloque 9, mean, wd 0.001
+A: TimesFM preentrenado
+semilla 42: MAE 9.775  salto 6.105  correccion -0.248  tipicidad -0.021  (2 ep.)
+A: TimesFM aleatorio
+semilla 42: MAE 9.775  salto 6.105  correccion -0.248  tipicidad -0.021  (2 ep.)
+A: Serie cruda
+semilla 42: MAE 9.394  salto 1.360  correccion -0.246  tipicidad -0.015  (2 ep.)
+B: TimesFM preentrenado
+semilla 42: MAE 9.805  salto 3.066  correccion -0.263  tipicidad -0.050  (2 ep.)
+B: Serie cruda
+semilla 42: MAE 9.444  salto 0.958  correccion -0.226  tipicidad -0.021  (2 ep.)
+                          mae_deg     endpoint_jump_deg     correction_gain     typicality_gain     intervention_deg    
+                             mean std              mean std            mean std            mean std             mean std
+tipo modelo                                                                                                             
+A    Serie cruda            9.394 NaN             1.360 NaN          -0.246 NaN          -0.015 NaN           10.318 NaN
+     TimesFM aleatorio      9.775 NaN             6.105 NaN          -0.248 NaN          -0.021 NaN           11.360 NaN
+     TimesFM preentrenado   9.775 NaN             6.105 NaN          -0.248 NaN          -0.021 NaN           11.360 NaN
+B    Serie cruda            9.444 NaN             0.958 NaN          -0.226 NaN          -0.021 NaN           10.587 NaN
+     TimesFM preentrenado   9.805 NaN             3.066 NaN          -0.263 NaN          -0.050 NaN           11.357 NaN
