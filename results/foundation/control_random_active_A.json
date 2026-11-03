@@ -1,0 +1,79 @@
+[
+ {
+  "mae_deg": 6.639603137969971,
+  "rmse_deg": 8.830885887145996,
+  "endpoint_jump_deg": 2.89353609085083,
+  "slope_jump_deg": 4.154194355010986,
+  "vel_mae_deg": 0.8121868371963501,
+  "roughness_deg": 0.10102196037769318,
+  "correction_gain": 0.04451622439106151,
+  "typicality_gain": 0.1483382566415505,
+  "intervention_deg": 8.974658966064453,
+  "seed": 42,
+  "epochs": 100
+ },
+ {
+  "mae_deg": 7.371562480926514,
+  "rmse_deg": 9.556441307067871,
+  "endpoint_jump_deg": 2.6263086795806885,
+  "slope_jump_deg": 4.101458549499512,
+  "vel_mae_deg": 0.871891438961029,
+  "roughness_deg": 0.07606294751167297,
+  "correction_gain": -0.048434031984030845,
+  "typicality_gain": 0.08398633307402274,
+  "intervention_deg": 9.383665084838867,
+  "seed": 1,
+  "epochs": 80
+ },
+ {
+  "mae_deg": 6.874675750732422,
+  "rmse_deg": 9.114041328430176,
+  "endpoint_jump_deg": 2.5058159828186035,
+  "slope_jump_deg": 3.8503847122192383,
+  "vel_mae_deg": 0.8257589936256409,
+  "roughness_deg": 0.10908270627260208,
+  "correction_gain": -0.003961814206151493,
+  "typicality_gain": 0.10469373844665254,
+  "intervention_deg": 9.278361320495605,
+  "seed": 7,
+  "epochs": 100
+ },
+ {
+  "mae_deg": 7.855180263519287,
+  "rmse_deg": 10.26523494720459,
+  "endpoint_jump_deg": 2.8729090690612793,
+  "slope_jump_deg": 4.1251420974731445,
+  "vel_mae_deg": 0.8922021389007568,
+  "roughness_deg": 0.0699261724948883,
+  "correction_gain": -0.06347929571133615,
+  "typicality_gain": 0.03859339171064729,
+  "intervention_deg": 9.557908058166504,
+  "seed": 123,
+  "epochs": 46
+ },
+ {
+  "mae_deg": 7.424612522125244,
+  "rmse_deg": 9.726655960083008,
+  "endpoint_jump_deg": 2.7911376953125,
+  "slope_jump_deg": 5.176381587982178,
+  "vel_mae_deg": 0.8960773944854736,
+  "roughness_deg": 0.09904424101114273,
+  "correction_gain": -0.014527058429140594,
+  "typicality_gain": 0.061635004812659745,
+  "intervention_deg": 9.487584114074707,
+  "seed": 2024,
+  "epochs": 67
+ },
+ {
+  "mae_deg": 6.655884265899658,
+  "rmse_deg": 8.723197937011719,
+  "endpoint_jump_deg": 1.586814522743225,
+  "slope_jump_deg": 3.8551199436187744,
+  "vel_mae_deg": 0.8004114031791687,
+  "roughness_deg": 0.0706409364938736,
+  "correction_gain": 0.04543347580626733,
+  "typicality_gain": 0.15254640548791296,
+  "intervention_deg": 8.818207740783691,
+  "seed": "ensemble"
+ }
+]

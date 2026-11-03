@@ -1,0 +1,326 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+
+\setstretch{1.0}
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{2pt}
+\setlist{itemsep=1pt,topsep=3pt}
+\renewcommand{\arraystretch}{1.12}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Práctica Investigativa III, 2026-2 -- Informe 2: Métodos}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+
+\renewcommand{\abstractname}{Resumen}
+\renewcommand{\contentsname}{Contenido}
+\renewcommand{\refname}{Referencias}
+\renewcommand{\tablename}{Tabla}
+\renewcommand{\figurename}{Figura}
+
+\newcommand{\gr}{$^{\circ}$}
+\newcommand{\Mae}{\mathrm{MAE}}
+\newcommand{\R}{\mathbb{R}}
+
+\begin{document}
+
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{%
+\small\textbf{Visto bueno del tutor científico} (Juan David Martínez Vargas, Universidad EAFIT)\\[10pt]
+Firma: \hrulefill\hspace{1.5em} Fecha: \rule{3cm}{0.4pt}}}
+
+\vspace{10pt}
+\begin{center}
+{\large\bfseries Métodos para el modelado normativo de ciclos de marcha\\ con un autoencoder recurrente}\\[8pt]
+Jesús David Cantellón\\
+{\small Universidad EAFIT, Práctica Investigativa III (2026-2)}\\
+{\small Profesor de la asignatura: Fredy Hernán Marín Sánchez \quad|\quad Tutor científico: Juan David Martínez Vargas}\\
+{\small 25 de octubre de 2026}
+\end{center}
+
+\begin{abstract}\noindent
+Este informe describe los métodos de un estudio sobre un autoencoder recurrente (GRU) que modela ciclos completos de marcha de seis ángulos articulares remuestreados a 101 puntos. El trabajo se enmarca en el proyecto NeuroStrideAI (exoesqueleto pediátrico) y busca un modelo normativo que reconstruya ciclos con fidelidad, produzca ciclos periódicos y, en su variante denoising, corrija trayectorias atípicas. Se definen los objetivos y las hipótesis, se describen los datos y la partición por sujeto, los modelos de referencia, las dos modificaciones propuestas (código latente en cada paso del decodificador y pérdida de cierre del ciclo), el protocolo experimental con cinco semillas y prueba t pareada, y las métricas. Se incluye una matriz que relaciona cada objetivo con su hipótesis, método y criterio de decisión, el método planeado con un codificador preentrenado (modelo fundacional de series de tiempo) y las suposiciones y limitaciones del diseño.
+\end{abstract}
+
+
+%--------------------------------------------------------------------
+\section{Contexto y problema}
+
+El proyecto NeuroStrideAI desarrolla modelos de aprendizaje profundo para el análisis de marcha y el control de un exoesqueleto pediátrico para niños con parálisis cerebral. Una línea de trabajo del proyecto, inspirada en Kolaghassi et al. \cite{kolaghassi2023}, consiste en aprender la marcha de referencia a partir de datos de personas sin patología (grupo control) para generar trayectorias de referencia que puedan servir como objetivo del dispositivo. En una etapa previa se implementó un clasificador de las formas de diplejía espástica descritas por Ferrari et al. \cite{ferrari2019}.
+
+En este informe cada ciclo de marcha se trata como un punto de $\R^{101\times 6}$ y se estudia un modelo de variedad de ciclos: un autoencoder que comprime el ciclo en un código latente y lo reconstruye \cite{hinton2006}. La comparación inicial del proyecto \cite{neurostride2026} evalúa siete modelos sobre los mismos datos; entre los modelos que aprenden de los datos, las dos variantes del autoencoder recurrente tuvieron los mayores errores de reconstrucción (MAE de 5.17\gr{} y 5.35\gr{}) y saltos grandes entre el primer y el último punto del ciclo reconstruido (4.94\gr{} y 3.45\gr{}), a pesar de que un ciclo de marcha es una curva periódica. Este informe define cómo se estudian las causas probables de esas dos deficiencias y cómo se verifican las correcciones propuestas.
+
+\textbf{Trabajo previo y contribución de este estudio.} Este estudio se apoya en el trabajo previo del equipo del proyecto NeuroStrideAI: el pipeline de procesamiento (estimación de pose, cálculo de ángulos articulares y segmentación de ciclos), la preparación del conjunto de ciclos con su control de calidad y su partición por sujeto, y la comparación inicial de siete modelos con las evaluaciones de fidelidad, corrección y tipicidad \cite{neurostride2026}. La contribución propia de este informe es el diagnóstico de las dos limitaciones del autoencoder recurrente, las dos modificaciones propuestas, el protocolo de validación con cinco semillas y prueba t pareada, las métricas de forma de la sección~\ref{sec:metricas}, el estudio de componentes adicionales y la planificación del codificador preentrenado.
+
+%--------------------------------------------------------------------
+\section{Objetivos e hipótesis}
+
+\subsection{Objetivo general}
+
+Mejorar un autoencoder recurrente de ciclos de marcha para que reconstruya con fidelidad ciclos de control no vistos y produzca ciclos periódicos, extender la mejora a su variante denoising para corregir trayectorias atípicas, y establecer con un protocolo reproducible cómo se compara con modelos de referencia.
+
+\subsection{Objetivos específicos}
+
+\begin{enumerate}[label=\textbf{O\arabic*.},leftmargin=2.2em]
+\item Construir un conjunto de ciclos normalizados con partición por sujeto, sin fuga de información entre entrenamiento, validación y prueba.
+\item Establecer una línea base con modelos de referencia y un protocolo de evaluación común (fidelidad, corrección y tipicidad).
+\item Corregir dos limitaciones identificadas en el autoencoder recurrente: la pérdida de información del código a lo largo del decodificador y la ausencia de periodicidad en el ciclo reconstruido.
+\item Extender las correcciones a la variante denoising y evaluar su efecto sobre la capacidad de corrección.
+\item Evaluar si un codificador preentrenado (modelo fundacional de series de tiempo) mejora las métricas frente al autoencoder recurrente entrenado desde cero.
+\end{enumerate}
+
+\subsection{Hipótesis}
+
+Cada hipótesis se contrasta con la métrica y el criterio indicados en la sección~\ref{sec:matriz}; el nivel de significancia es $\alpha=0.05$.
+
+\begin{enumerate}[label=\textbf{H\arabic*.},leftmargin=2.2em]
+\item Entregar el código latente $z$ al decodificador en cada paso (y no solo como estado inicial) reduce el error de reconstrucción en ciclos de control no vistos.
+\item Añadir a la pérdida un término que penalice la diferencia entre el primer y el último punto del ciclo reconstruido reduce el salto de cierre, y existe un peso del término para el cual el error de reconstrucción no empeora de forma apreciable.
+\item Las dos modificaciones aplicadas a la variante denoising reducen el salto de cierre y aumentan la ganancia de corrección.
+\item Promediar las predicciones de cinco modelos entrenados con semillas distintas (ensamble) reduce el error y el salto frente a un modelo individual.
+\item (Planeada) Un codificador preentrenado de series de tiempo, con un decodificador entrenado sobre sus representaciones, mejora al menos una de las métricas de fidelidad o corrección frente al autoencoder recurrente mejorado.
+\end{enumerate}
+
+%--------------------------------------------------------------------
+\section{Datos}
+
+\subsection{Construcción de los ciclos}
+
+Los datos proceden del pipeline del proyecto: video de marcha, estimación de pose con AlphaPose \cite{fang2023alphapose} y ángulos articulares sagitales muestreados a 30 Hz. Se usan seis señales: flexo-extensión de cadera y rodilla, y dorsiflexión-plantarflexión de tobillo, para la pierna izquierda y la derecha. Cada intervalo de ciclo definido en la segmentación original del proyecto se trata como un ciclo independiente y se interpola a 101 puntos (0--100\% del ciclo) con el interpolador PCHIP \cite{fritsch1980}, que conserva picos y monotonía. No se concatenan segmentos separados.
+
+Un ciclo se acepta si cumple un control de calidad: entre 15 y 90 cuadros crudos, al menos 90\% de valores finitos, y, en cada una de las seis señales, un salto absoluto máximo entre cuadros consecutivos de 17\gr{} y una diferencia entre el primer y el último valor no mayor de 25\gr{} (umbrales derivados de auditar los 551 intervalos originales). Quedan 461 ciclos válidos de 64 personas. La etiqueta del sujeto (control o caso) se deriva del identificador de origen del reporte de migración del proyecto; no se leen nombres ni otros identificadores personales.
+
+\subsection{Partición por sujeto}
+
+La partición se hace por sujeto para evitar que ciclos de una misma persona aparezcan en conjuntos distintos \cite{saeb2017}. Los sujetos control se dividen aleatoriamente (semilla 42) en 70\% entrenamiento, 15\% validación y 15\% prueba; los sujetos del grupo de casos (niños con parálisis cerebral) se reservan como conjunto de prueba externo y nunca intervienen en el ajuste.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{llcc}
+\toprule
+Conjunto & Grupo & Sujetos & Ciclos \\
+\midrule
+Entrenamiento (\texttt{train}) & control & 28 & 240 \\
+Validación (\texttt{validation}) & control & 6 & 44 \\
+Prueba de control (\texttt{control\_test}) & control & 7 & 47 \\
+Prueba externa (\texttt{case\_external\_test}) & casos & 23 & 130 \\
+\midrule
+Total & & 64 & 461 \\
+\bottomrule
+\end{tabular}
+\caption{Partición por sujeto.}
+\end{table}
+
+\subsection{Estandarización}
+
+Cada una de las seis señales se estandariza con la media y la desviación estándar calculadas sobre los ciclos de entrenamiento (todas las fases). Los modelos se entrenan y operan en unidades estandarizadas; las métricas en grados se calculan tras invertir la estandarización.
+
+%--------------------------------------------------------------------
+\section{Modelos}
+
+Sea $G\in\R^{101\times 6}$ un ciclo estandarizado, $g_t\in\R^6$ su fila $t$ y $\tau_t=(t-1)/100$ la fase.
+
+\subsection{Modelos de referencia}
+
+Los modelos de referencia son los de la comparación inicial del proyecto \cite{neurostride2026}, entrenados solo con ciclos de control de entrenamiento.
+\begin{itemize}
+\item \textbf{Media de controles:} el ciclo promedio por fase.
+\item \textbf{PCA} \cite{jolliffe2016}: proyección lineal del ciclo aplanado (606 valores) con el menor número de componentes que explique 95\% de la varianza, con un máximo de 20.
+\item \textbf{Autoencoder convolucional} (1D, código de 16 valores) \cite{hinton2006} y su variante \textbf{denoising} \cite{vincent2008}, entrenada con ciclos dañados (sección~\ref{sec:denoising}).
+\item \textbf{Proceso gaussiano periódico} \cite{rasmussen2006}: media de controles más un residuo modelado con un kernel periódico $k(t,t')=\sigma_f^2\exp\!\big(-2\sin^2(\pi|t-t'|)/\ell^2\big)+\sigma_n^2\delta(t,t')$. El largo de escala $\ell$ se toma de un ajuste previo del proyecto por máxima verosimilitud sobre la señal cruda, $\sigma_f^2$ es la varianza empírica del residuo respecto a la media de controles, y el ruido $\sigma_n^2=\lambda\sigma_f^2$ se selecciona en validación maximizando la ganancia de corrección. Cada ciclo se reconstruye condicionando el proceso en sus propios 101 puntos \cite{neurostride2026}.
+\end{itemize}
+
+\subsection{Autoencoder recurrente base (modelo A)}
+
+El codificador es una GRU \cite{cho2014} bidireccional \cite{schuster1997} de una capa con 48 unidades ocultas por dirección, que lee el ciclo de $t=1$ a $101$ con las seis señales como entrada. Los estados finales de ambas direcciones se concatenan y una capa lineal produce el código $z\in\R^{d}$ ($d=16$ en el modelo base):
+\begin{equation}
+z = W_e\,[\overrightarrow{h}_{101};\overleftarrow{h}_{1}] + b_e .
+\end{equation}
+El decodificador es una GRU de 48 unidades. Su estado inicial se obtiene del código, $h_0=W_0 z+b_0$, y en cada paso recibe una codificación periódica de la fase, $u_t=[\sin 2\pi\tau_t,\ \cos 2\pi\tau_t]$:
+\begin{equation}
+h_t=\mathrm{GRU}(h_{t-1},u_t),\qquad \hat g_t = W_o h_t + b_o .
+\end{equation}
+La pérdida base es el error cuadrático medio entre $\hat G$ y $G$. El modelo A se entrena con ciclos limpios, con entrada y objetivo iguales.
+
+\subsection{Variante denoising (modelo B)}
+\label{sec:denoising}
+
+El modelo B tiene la misma arquitectura, pero recibe como entrada un ciclo dañado $\tilde G$ y su objetivo es el ciclo limpio $G$. En cada lote, y para cada canal $c$, el daño es
+\begin{equation}
+\tilde g_{t,c}=m_c+a_c\,(g_{t,c}-m_c)+b_c+\varepsilon_{t,c},
+\end{equation}
+donde $m_c$ es la media del canal en el ciclo, $a_c\sim U(0.5,1.8)$ es un cambio de amplitud, $b_c\sim U(-0.9,0.9)$ un desplazamiento vertical y $\varepsilon_{t,c}\sim\mathcal N(0,0.15^2)$ ruido. Después, los tres canales de cada pierna se desplazan circularmente un número entero de pasos $s\sim U\{-8,\dots,8\}$, independiente por pierna. La validación (y la parada temprana) usa ciclos limpios como entrada.
+
+\subsection{Modificación 1: código en cada paso del decodificador}
+
+Se concatena $z$ a la entrada del decodificador en los 101 pasos, $u_t'=[\sin 2\pi\tau_t,\ \cos 2\pi\tau_t,\ z]$, conservando $h_0=W_0z+b_0$ y la codificación de fase. La motivación es que, con $z$ solo en el estado inicial, la información del código debe sobrevivir a 100 actualizaciones recurrentes. Un intento previo del proyecto \cite{neurostride2026}, que alimentaba el decodificador únicamente con $z$ repetido (entrada constante) y sin señal de fase, no funcionó; la modificación propuesta mantiene la codificación de fase y el estado inicial derivado del código.
+
+\subsection{Modificación 2: pérdida de cierre}
+
+Un ciclo de marcha es periódico: el punto 101 y el punto 1 son vecinos en el tiempo. Se añade a la pérdida un término de cierre con peso $w\ge 0$:
+\begin{equation}
+\mathcal L=\frac{1}{606}\sum_{t=1}^{101}\sum_{c=1}^{6}(\hat g_{t,c}-g_{t,c})^2+w\cdot\frac16\sum_{c=1}^{6}\left|\hat g_{1,c}-\hat g_{101,c}\right| ,
+\end{equation}
+promediada sobre el lote. El peso $w$ regula el compromiso entre fidelidad y cierre.
+
+\subsection{Configuraciones, hiperparámetros y ensamble}
+
+Se compara el modelo original con el modelo modificado ($d=16$, $w=0.05$) y con variantes de capacidad: $d\in\{16,32,48,64\}$ y $w$ entre 0 y 1 (valores explorados: 0, 0.02, 0.03, 0.05, 0.07, 0.1, 0.15, 0.2, 0.3, 0.5, 1). Las configuraciones finales usadas como referencia son $d=32$ y $w=0.1$ para el modelo A, y $d=16$ y $w=0.05$ para el modelo B. Un \textbf{ensamble} promedia las predicciones de $M=5$ modelos entrenados con las semillas del protocolo \cite{dietterich2000}.
+
+\subsection{Componentes adicionales explorados}
+
+Para delimitar dónde está el cuello de botella se probaron componentes adicionales con el mismo protocolo, de forma exploratoria (una semilla) y, si resultaron prometedores, con cinco semillas.
+\begin{itemize}
+\item \textbf{Regularizaciones de diferencias consecutivas} ($t$ frente a $t-1$), con las diferencias circulares $\Delta g_t=g_{t+1}-g_t$ (índices módulo 101): suavidad circular $\lambda\,\overline{|\Delta\hat g|}$; curvatura circular $\lambda\,\overline{|\Delta^2\hat g|}$; igualar incrementos $\lambda\,\overline{|\Delta\hat g-\Delta g|}$; igualar la pendiente en la costura, $\lambda\,\overline{|(\hat g_2-\hat g_1)-(\hat g_{101}-\hat g_{100})|}$; término de kernel periódico $\lambda\sum_{s,t}K(\tau_s,\tau_t)\|\hat g_s-\hat g_t\|^2$ con $K\propto\exp(-2\sin^2(\pi(\tau_s-\tau_t))/\ell^2)$, $\ell=0.15$; y ponderación del error cerca de los extremos del ciclo. También se probaron la primera y la segunda diferencia sin cierre circular.
+\item \textbf{Cambios de arquitectura y entradas:} decodificador bidireccional, atención en el codificador \cite{bahdanau2015}, velocidad angular y asimetría izquierda-derecha como entradas adicionales.
+\item \textbf{Cambios de entrenamiento del modelo B:} penalización de consistencia entre los códigos del ciclo limpio y del dañado, intensidad del daño (0.5, 1.0, 1.5) y currículo de daño creciente.
+\end{itemize}
+
+\subsection{Método planeado: codificador preentrenado}
+\label{sec:fundacional}
+
+Como siguiente etapa (H5), y por sugerencia del tutor científico, se evaluará un modelo fundacional de series de tiempo, TimesFM \cite{das2024timesfm}, un transformador solo decodificador preentrenado para pronóstico. El diseño previsto es el siguiente.
+\begin{enumerate}
+\item Cada una de las seis señales estandarizadas se presenta al modelo congelado como una serie univariada de 101 puntos, y se extraen sus representaciones internas, resumidas por promedio sobre los segmentos temporales que el modelo procesa.
+\item Las representaciones de los seis canales se concatenan y una capa lineal entrenable las proyecta al código $z$.
+\item Se usa el decodificador del modelo A mejorado (modificaciones 1 y 2), entrenado desde cero, con la misma pérdida y el mismo protocolo.
+\item Se compara con el modelo A mejorado bajo las mismas métricas, particiones y cinco semillas; la semilla afecta solo la inicialización de la proyección y del decodificador.
+\end{enumerate}
+La viabilidad técnica (interfaz para extraer representaciones, ajuste de la longitud de la serie y cómputo en GPU) debe verificarse antes de ejecutar este experimento.
+
+%--------------------------------------------------------------------
+\section{Protocolo experimental}
+
+\subsection{Entrenamiento}
+
+Todos los modelos de redes neuronales se implementan en PyTorch \cite{paszke2019} y se entrenan con el optimizador Adam \cite{kingma2015}, tasa de aprendizaje $10^{-3}$, lote de 64 ciclos, hasta 100 épocas, recorte de la norma del gradiente a 1.0 \cite{pascanu2013} y parada temprana con paciencia de 12 épocas sobre la pérdida de validación \cite{prechelt1998}; se conservan los pesos de la mejor época. PCA y el proceso gaussiano se ajustan con scikit-learn \cite{pedregosa2011}.
+
+\subsection{Semillas y contraste estadístico}
+
+La inicialización de pesos y el orden de los lotes dependen de una semilla. Para afirmar una mejora se entrena cada configuración con cinco semillas (42, 1, 7, 123, 2024) y se compara con la configuración de referencia semilla a semilla mediante una prueba t pareada de dos colas \cite{student1908} con $\alpha=0.05$; se reportan media y desviación estándar. La exploración inicial de variantes usa una sola semilla (42) y sus resultados no se consideran evidencia.
+
+\subsection{Selección de hiperparámetros}
+
+El peso $w$ y el tamaño del código se exploraron observando las métricas sobre el conjunto de prueba de control. Esta es una limitación (sección~\ref{sec:limites}); una selección sobre validación o por validación cruzada por sujeto queda como mejora.
+
+\subsection{Reproducibilidad}
+
+Los datos derivados, los guiones de entrenamiento y evaluación, y los resultados por semilla se almacenan en archivos versionados; la partición por sujeto se guarda en un archivo y las semillas se fijan en cada guion. El código y los resultados se publicarán en un repositorio de GitHub, cuyo enlace se incluirá en la versión final del artículo.
+
+%--------------------------------------------------------------------
+\section{Métricas de evaluación}
+\label{sec:metricas}
+
+Todas las métricas son las mismas para todos los modelos. Las métricas en grados se calculan tras invertir la estandarización; $N$ es el número de ciclos del conjunto evaluado.
+
+\textbf{Evaluación I: fidelidad} (47 ciclos limpios de \texttt{control\_test}):
+\begin{align}
+\Mae&=\frac{1}{606N}\sum_{n}\sum_{t,c}\left|\hat g^{(n)}_{t,c}-g^{(n)}_{t,c}\right|,\\
+\mathrm{RMSE}&=\sqrt{\frac{1}{606N}\sum_{n}\sum_{t,c}\left(\hat g^{(n)}_{t,c}-g^{(n)}_{t,c}\right)^2},\\
+\text{Salto de cierre}&=\frac{1}{6N}\sum_{n}\sum_{c}\left|\hat g^{(n)}_{1,c}-\hat g^{(n)}_{101,c}\right|.
+\end{align}
+
+\textbf{Evaluación II: corrección} (los mismos 47 ciclos, dañados con la receta de la sección~\ref{sec:denoising}, con una realización aleatoria):
+\begin{equation}
+\text{Ganancia de corrección}=1-\frac{\Mae(f(\tilde G),G)}{\Mae(\tilde G,G)} ,
+\end{equation}
+donde $f$ es el modelo; 0 significa que no se deshace nada del daño y 1 que se deshace por completo.
+
+\textbf{Evaluación III: casos externos} (130 ciclos de \texttt{case\_external\_test}). Sea $d(x)$ la distancia euclídea, en unidades estandarizadas y con el ciclo aplanado, entre $x$ y el ciclo de control de entrenamiento más cercano:
+\begin{align}
+\text{Ganancia de tipicidad}&=\frac1N\sum_{n}\left(1-\frac{d(f(x^{(n)}))}{d(x^{(n)})}\right),\\
+\text{Intervención}&=\frac{1}{606N}\sum_{n}\sum_{t,c}\left|f(x^{(n)})_{t,c}-x^{(n)}_{t,c}\right|\ \text{(en grados)}.
+\end{align}
+La intervención describe cuánto cambia el modelo la entrada; no tiene sentido de ``mejor''.
+
+\textbf{Métricas de forma} (en grados, menor es mejor), usadas para las regularizaciones de la sección~4.7: \emph{pendiente en la costura}, $|(\hat g_2-\hat g_1)-(\hat g_{101}-\hat g_{100})|$ promediada; \emph{error en incrementos}, $\overline{|\Delta\hat g-\Delta g|}$ sin cierre circular; y \emph{rugosidad}, $\overline{|\Delta^2\hat g|}$.
+
+%--------------------------------------------------------------------
+\section{Relación entre objetivos, hipótesis, métodos y criterios}
+\label{sec:matriz}
+
+\begin{table}[h]
+\centering\footnotesize
+\setlength{\tabcolsep}{4pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{1.1cm}>{\raggedright\arraybackslash}p{1.1cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}p{3.4cm}@{}}
+\toprule
+Objetivo & Hipótesis & Método & Métrica & Criterio \\
+\midrule
+O1 & -- & Ciclos con control de calidad, interpolación PCHIP, partición por sujeto, estandarización (sección 3) & Conteo de sujetos y ciclos por conjunto & Ningún sujeto en más de un conjunto \\
+O2 & -- & Siete modelos de referencia y tres evaluaciones comunes (secciones 4.1 y 6) & I, II y III & Cifras reproducibles con las mismas particiones \\
+O3 & H1 & Modificación 1 (código en cada paso) frente al modelo base & $\Mae$ en \texttt{control\_test} & Prueba t pareada, 5 semillas, $p<0.05$ \\
+O3 & H2 & Modificación 2 (pérdida de cierre) y barrido de $w$ & Salto de cierre y $\Mae$ & Prueba t pareada; efecto sobre $\Mae$ reportado \\
+O4 & H3 & Modificaciones 1 y 2 en el modelo B & Salto y ganancia de corrección & Prueba t pareada, 5 semillas \\
+O3, O4 & H4 & Ensamble de 5 modelos (sección 4.6) & $\Mae$, salto, corrección & Comparación con el modelo individual (un solo ensamble: sin prueba) \\
+O5 & H5 & Codificador TimesFM congelado y decodificador entrenado (sección 4.8) & $\Mae$, salto, corrección & Prueba t pareada, 5 semillas \\
+O3 & -- & Componentes adicionales (sección 4.7) & Métricas de fidelidad y de forma & Exploratorio; confirmación con 5 semillas \\
+\bottomrule
+\end{tabularx}
+\caption{Relación entre objetivos, hipótesis, métodos y criterios de decisión.}
+\end{table}
+
+%--------------------------------------------------------------------
+\section{Suposiciones y limitaciones}
+\label{sec:limites}
+
+\subsection{Suposiciones}
+
+\begin{enumerate}
+\item \textbf{Ciclos independientes y comparables.} Cada intervalo de la segmentación original es un ciclo de zancada completo y comparable tras normalizarlo a 101 puntos. Se supone que la normalización lineal en el tiempo conserva la fase biomecánica; los ciclos de una misma persona no son independientes entre sí, por lo que la partición se hace por sujeto.
+\item \textbf{El grupo control representa la marcha de referencia.} La noción de ``típico'' se define como la distribución de los ciclos de control de entrenamiento. La ganancia de tipicidad mide cercanía a esos ciclos, no corrección clínica.
+\item \textbf{Periodicidad.} Se supone que el ciclo reconstruido debe cerrar. Los ciclos reales del conjunto no cierran exactamente (salto medio cercano a 6\gr{} incluso tras el filtro de calidad, que ya descarta ciclos con diferencia inicio-final mayor de 25\gr{}), de modo que la pérdida de cierre impone una propiedad deseada, no fidelidad a la medición.
+\item \textbf{El daño sintético es una aproximación.} La receta de daño (amplitud, desplazamiento, ruido y corrimiento de fase) no representa necesariamente la variabilidad de una marcha patológica real; la evaluación II mide la capacidad de deshacer ese daño en particular.
+\item \textbf{Referencia poblacional.} Al no incluir antropometría ni edad, el modelo produce una referencia poblacional, no personalizada.
+\end{enumerate}
+
+\subsection{Limitaciones}
+
+\begin{enumerate}
+\item \textbf{Filtro de calidad.} El control de calidad descartó cerca de 17\% de los 551 intervalos originales (entre ellos los que no cierran más de 25\gr{}); los ciclos retenidos pueden no representar toda la variabilidad de la marcha estimada por video.
+\item \textbf{Tamaño de los datos.} El entrenamiento usa 240 ciclos de 28 sujetos. Esto limita la capacidad de estimar componentes aprendibles adicionales y la generalización a otras poblaciones; no hay un conjunto de datos externo independiente.
+\item \textbf{Selección de hiperparámetros sobre \texttt{control\_test}.} El peso $w$ y el tamaño del código se eligieron mirando el conjunto en el que se reportan los resultados, por lo que las cifras finales son algo optimistas.
+\item \textbf{Alcance de la prueba t.} Con cinco semillas, la prueba t pareada mide la variabilidad por inicialización y orden de los lotes, no por muestreo de sujetos. Se probaron muchas variantes y no se corrigió por comparaciones múltiples, por lo que los valores $p$ deben leerse con cautela. El efecto individual de las modificaciones 1 y 2 se confirmó con cinco semillas solo en su combinación; por separado se exploró con una semilla.
+\item \textbf{Ensambles.} Cada ensamble proviene de un único conjunto de cinco modelos; no se midió cuánto varía un ensamble de otro.
+\item \textbf{Evaluación II.} La ganancia de corrección usa una sola realización del daño aleatorio. Para el modelo B, la parada temprana se hace con ciclos limpios en validación, no dañados.
+\item \textbf{Evaluación III.} No se ha recalculado para las versiones mejoradas de los modelos; las cifras de tipicidad e intervención disponibles son las de la comparación inicial del proyecto.
+\item \textbf{Modelos de referencia.} PCA, el proceso gaussiano y los autoencoders convolucionales se evalúan con una sola corrida de la comparación inicial del proyecto y no se ajustaron con el mismo esfuerzo que la red recurrente; el autoencoder convolucional denoising no se reevaluó con cinco semillas.
+\item \textbf{Datos reconstruidos.} Los datos derivados se reconstruyeron a partir de los archivos entregados; las cifras reproducidas del modelo original (MAE 5.01\gr{}) difieren ligeramente de las de la comparación inicial (5.17\gr{}).
+\item \textbf{Procedencia y etiquetas.} La etiqueta control/caso proviene del reporte de migración del proyecto; el protocolo ético y de consentimiento aplicable a estos datos debe confirmarse con el tutor científico antes de cualquier uso o difusión de los datos.
+\item \textbf{Método planeado.} El modelo fundacional se entrenó para pronóstico, no para reconstrucción de ciclos cortos; su utilidad como codificador es una hipótesis (H5) y no se ha probado.
+\end{enumerate}
+
+%--------------------------------------------------------------------
+\begin{thebibliography}{99}
+\small
+\bibitem{neurostride2026} Proyecto NeuroStrideAI, ``Formulación matemática de los modelos: manifold de marcha control y modelo normativo por fase,'' registro de trabajo del proyecto, 23 de septiembre de 2026.
+\bibitem{kolaghassi2023} R. Kolaghassi, G. Marcelli y K. Sirlantzis, ``Deep learning models for stable gait prediction applied to exoskeleton reference trajectories for children with cerebral palsy,'' \emph{IEEE Access}, vol. 11, pp. 31962--31976, 2023.
+\bibitem{ferrari2019} A. Ferrari, L. Bergamini, G. Guerzoni, S. Calderara, N. Bicocchi, G. Vitetta, C. Borghi, R. Neviani y A. Ferrari, ``Gait-based diplegia classification using LSMT networks,'' \emph{Journal of Healthcare Engineering}, vol. 2019, art. 3796898, 2019.
+\bibitem{fang2023alphapose} H.-S. Fang, J. Li, H. Tang, C. Xu, H. Zhu, Y. Xiu, Y.-L. Li y C. Lu, ``AlphaPose: whole-body regional multi-person pose estimation and tracking in real-time,'' \emph{IEEE Transactions on Pattern Analysis and Machine Intelligence}, 2023 (arXiv:2211.03375).
+\bibitem{fritsch1980} F. N. Fritsch y R. E. Carlson, ``Monotone piecewise cubic interpolation,'' \emph{SIAM Journal on Numerical Analysis}, vol. 17, no. 2, pp. 238--246, 1980.
+\bibitem{saeb2017} S. Saeb, L. Lonini, A. Jayaraman, D. C. Mohr y K. P. Kording, ``The need to approximate the use-case in clinical machine learning,'' \emph{GigaScience}, vol. 6, no. 5, gix019, 2017.
+\bibitem{hinton2006} G. E. Hinton y R. R. Salakhutdinov, ``Reducing the dimensionality of data with neural networks,'' \emph{Science}, vol. 313, no. 5786, pp. 504--507, 2006.
+\bibitem{vincent2008} P. Vincent, H. Larochelle, Y. Bengio y P.-A. Manzagol, ``Extracting and composing robust features with denoising autoencoders,'' en \emph{Proc. ICML}, 2008, pp. 1096--1103.
+\bibitem{jolliffe2016} I. T. Jolliffe y J. Cadima, ``Principal component analysis: a review and recent developments,'' \emph{Philosophical Transactions of the Royal Society A}, vol. 374, no. 2065, 20150202, 2016.
+\bibitem{rasmussen2006} C. E. Rasmussen y C. K. I. Williams, \emph{Gaussian Processes for Machine Learning}. Cambridge, MA: MIT Press, 2006.
+\bibitem{cho2014} K. Cho et al., ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' en \emph{Proc. EMNLP}, 2014, pp. 1724--1734.
+\bibitem{schuster1997} M. Schuster y K. K. Paliwal, ``Bidirectional recurrent neural networks,'' \emph{IEEE Transactions on Signal Processing}, vol. 45, no. 11, pp. 2673--2681, 1997.
+\bibitem{dietterich2000} T. G. Dietterich, ``Ensemble methods in machine learning,'' en \emph{Multiple Classifier Systems}, LNCS 1857, Springer, 2000, pp. 1--15.
+\bibitem{bahdanau2015} D. Bahdanau, K. Cho y Y. Bengio, ``Neural machine translation by jointly learning to align and translate,'' en \emph{Proc. ICLR}, 2015.
+\bibitem{das2024timesfm} A. Das, W. Kong, R. Sen y Y. Zhou, ``A decoder-only foundation model for time-series forecasting,'' en \emph{Proc. 41st International Conference on Machine Learning}, PMLR vol. 235, pp. 10148--10167, 2024.
+\bibitem{paszke2019} A. Paszke et al., ``PyTorch: an imperative style, high-performance deep learning library,'' en \emph{Advances in Neural Information Processing Systems 32}, 2019.
+\bibitem{kingma2015} D. P. Kingma y J. Ba, ``Adam: a method for stochastic optimization,'' en \emph{Proc. ICLR}, 2015.
+\bibitem{pascanu2013} R. Pascanu, T. Mikolov y Y. Bengio, ``On the difficulty of training recurrent neural networks,'' en \emph{Proc. ICML}, PMLR vol. 28, pp. 1310--1318, 2013.
+\bibitem{prechelt1998} L. Prechelt, ``Early stopping -- but when?,'' en \emph{Neural Networks: Tricks of the Trade}, LNCS 1524, Springer, 1998, pp. 55--69.
+\bibitem{pedregosa2011} F. Pedregosa et al., ``Scikit-learn: machine learning in Python,'' \emph{Journal of Machine Learning Research}, vol. 12, pp. 2825--2830, 2011.
+\bibitem{student1908} Student, ``The probable error of a mean,'' \emph{Biometrika}, vol. 6, no. 1, pp. 1--25, 1908.
+\end{thebibliography}
+
+\end{document}

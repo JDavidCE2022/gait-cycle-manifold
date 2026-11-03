@@ -1,0 +1,103 @@
+{
+ "layer": 9,
+ "pooling": "meanlast",
+ "wd": 0.001,
+ "exploracion": [
+  {
+   "bloque": 9,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.001,
+   "dim": 15372,
+   "mae_deg": 7.430967330932617,
+   "rmse_deg": 9.906317710876465,
+   "endpoint_jump_deg": 2.6522481441497803,
+   "slope_jump_deg": 4.60698127746582,
+   "vel_mae_deg": 0.8681110739707947,
+   "roughness_deg": 0.09437887370586395
+  },
+  {
+   "bloque": 9,
+   "agrupacion": "mean",
+   "decaimiento": 0.0,
+   "dim": 7692,
+   "mae_deg": 7.595447540283203,
+   "rmse_deg": 10.080520629882812,
+   "endpoint_jump_deg": 3.4284188747406006,
+   "slope_jump_deg": 4.576700210571289,
+   "vel_mae_deg": 0.860999345779419,
+   "roughness_deg": 0.0906698927283287
+  },
+  {
+   "bloque": 9,
+   "agrupacion": "mean",
+   "decaimiento": 0.001,
+   "dim": 7692,
+   "mae_deg": 7.625746726989746,
+   "rmse_deg": 10.043366432189941,
+   "endpoint_jump_deg": 3.1392018795013428,
+   "slope_jump_deg": 4.2651262283325195,
+   "vel_mae_deg": 0.8629169464111328,
+   "roughness_deg": 0.08185776323080063
+  },
+  {
+   "bloque": 9,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.0,
+   "dim": 15372,
+   "mae_deg": 7.654880523681641,
+   "rmse_deg": 10.162297248840332,
+   "endpoint_jump_deg": 2.7648627758026123,
+   "slope_jump_deg": 4.322271347045898,
+   "vel_mae_deg": 0.8832800388336182,
+   "roughness_deg": 0.09171833097934723
+  },
+  {
+   "bloque": -1,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.001,
+   "dim": 15372,
+   "mae_deg": 8.05401611328125,
+   "rmse_deg": 10.775078773498535,
+   "endpoint_jump_deg": 3.176976442337036,
+   "slope_jump_deg": 4.368558883666992,
+   "vel_mae_deg": 0.9064164757728577,
+   "roughness_deg": 0.08342680335044861
+  },
+  {
+   "bloque": -1,
+   "agrupacion": "mean",
+   "decaimiento": 0.0,
+   "dim": 7692,
+   "mae_deg": 8.117908477783203,
+   "rmse_deg": 10.748440742492676,
+   "endpoint_jump_deg": 3.503995418548584,
+   "slope_jump_deg": 5.021777629852295,
+   "vel_mae_deg": 0.8902302384376526,
+   "roughness_deg": 0.08507375419139862
+  },
+  {
+   "bloque": -1,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.0,
+   "dim": 15372,
+   "mae_deg": 8.16010856628418,
+   "rmse_deg": 10.855502128601074,
+   "endpoint_jump_deg": 3.9672768115997314,
+   "slope_jump_deg": 4.052558898925781,
+   "vel_mae_deg": 0.8981022238731384,
+   "roughness_deg": 0.07767090946435928
+  },
+  {
+   "bloque": -1,
+   "agrupacion": "mean",
+   "decaimiento": 0.001,
+   "dim": 7692,
+   "mae_deg": 8.276391983032227,
+   "rmse_deg": 10.818965911865234,
+   "endpoint_jump_deg": 3.1126255989074707,
+   "slope_jump_deg": 4.529243469238281,
+   "vel_mae_deg": 0.9037082195281982,
+   "roughness_deg": 0.07596677541732788
+  }
+ ]
+}

@@ -1,0 +1,103 @@
+{
+ "layer": 9,
+ "pooling": "mean",
+ "wd": 0.001,
+ "exploracion": [
+  {
+   "mae_deg": 9.413987159729004,
+   "rmse_deg": 12.117850303649902,
+   "endpoint_jump_deg": 6.715024471282959,
+   "slope_jump_deg": 2.3195600509643555,
+   "vel_mae_deg": 0.9167569279670715,
+   "roughness_deg": 0.03213024139404297,
+   "bloque": 9,
+   "agrupacion": "mean",
+   "decaimiento": 0.001,
+   "dim": 7692
+  },
+  {
+   "mae_deg": 9.426835060119629,
+   "rmse_deg": 12.137977600097656,
+   "endpoint_jump_deg": 6.663756847381592,
+   "slope_jump_deg": 2.3293704986572266,
+   "vel_mae_deg": 0.9170026183128357,
+   "roughness_deg": 0.03236972168087959,
+   "bloque": 9,
+   "agrupacion": "mean",
+   "decaimiento": 0.0,
+   "dim": 7692
+  },
+  {
+   "mae_deg": 9.655667304992676,
+   "rmse_deg": 12.490238189697266,
+   "endpoint_jump_deg": 7.337826251983643,
+   "slope_jump_deg": 2.5181894302368164,
+   "vel_mae_deg": 0.9192162156105042,
+   "roughness_deg": 0.034758199006319046,
+   "bloque": -1,
+   "agrupacion": "mean",
+   "decaimiento": 0.0,
+   "dim": 7692
+  },
+  {
+   "mae_deg": 9.657608032226562,
+   "rmse_deg": 12.489127159118652,
+   "endpoint_jump_deg": 7.231043815612793,
+   "slope_jump_deg": 2.406458616256714,
+   "vel_mae_deg": 0.9184331893920898,
+   "roughness_deg": 0.03325210139155388,
+   "bloque": -1,
+   "agrupacion": "mean",
+   "decaimiento": 0.001,
+   "dim": 7692
+  },
+  {
+   "mae_deg": 10.170370101928711,
+   "rmse_deg": 13.362491607666016,
+   "endpoint_jump_deg": 9.887673377990723,
+   "slope_jump_deg": 3.266451120376587,
+   "vel_mae_deg": 0.9373162984848022,
+   "roughness_deg": 0.04394398629665375,
+   "bloque": 9,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.0,
+   "dim": 15372
+  },
+  {
+   "mae_deg": 10.23082160949707,
+   "rmse_deg": 13.423296928405762,
+   "endpoint_jump_deg": 9.877614974975586,
+   "slope_jump_deg": 3.3171303272247314,
+   "vel_mae_deg": 0.937112033367157,
+   "roughness_deg": 0.043944865465164185,
+   "bloque": 9,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.001,
+   "dim": 15372
+  },
+  {
+   "mae_deg": 10.778746604919434,
+   "rmse_deg": 13.962288856506348,
+   "endpoint_jump_deg": 8.81962776184082,
+   "slope_jump_deg": 2.7458834648132324,
+   "vel_mae_deg": 0.9148876667022705,
+   "roughness_deg": 0.03841911256313324,
+   "bloque": -1,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.001,
+   "dim": 15372
+  },
+  {
+   "mae_deg": 10.796809196472168,
+   "rmse_deg": 14.043319702148438,
+   "endpoint_jump_deg": 9.009344100952148,
+   "slope_jump_deg": 2.7738680839538574,
+   "vel_mae_deg": 0.9149681925773621,
+   "roughness_deg": 0.038727935403585434,
+   "bloque": -1,
+   "agrupacion": "meanlast",
+   "decaimiento": 0.0,
+   "dim": 15372
+  }
+ ]
+}
