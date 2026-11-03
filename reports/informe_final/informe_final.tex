@@ -30,12 +30,14 @@
 \newcommand{\Mae}{\mathrm{MAE}}
 \newcommand{\R}{\mathbb{R}}
 
+\makeatletter\def\@@and{y}\makeatother
 \begin{document}
 
 \title[Autoencoder recurrente de ciclos de marcha]{Autoencoder recurrente para ciclos de marcha: diagn\'ostico, cierre del ciclo y evaluaci\'on de un codificador fundacional congelado}
 
 \author{Jes\'us David Cantell\'on}
-\thanks{Universidad EAFIT, Pr\'actica Investigativa III. Tutor cient\'ifico: Juan David Mart\'inez Vargas. Noviembre de 2026.}
+\thanks{Universidad EAFIT, Pr\'actica Investigativa III. Noviembre de 2026.}
+\author{Juan David Mart\'inez Vargas}
 
 \begin{abstract}
 Se estudia un autoencoder recurrente (GRU) que modela ciclos completos de marcha de seis ángulos articulares remuestreados a 101 puntos, con el fin de obtener un modelo normativo del grupo control. En la comparación inicial del proyecto, las dos variantes recurrentes (con ciclos limpios y con eliminación de ruido) tuvieron los mayores errores de reconstrucción entre los modelos que aprenden de los datos, y reconstruían ciclos cuyos extremos no coinciden. Se identificaron dos causas probables, a saber, que el código latente solo entra al decodificador como estado inicial y que la pérdida no exige periodicidad, y se propusieron dos modificaciones: entregar el código en cada paso del decodificador y añadir a la pérdida un término de cierre del ciclo. Con cinco semillas y prueba t pareada, el error absoluto medio del modelo limpio bajó de 4.99\gr{} (modelo original reproducido) a 4.11\gr{} (3.91\gr{} con un ensamble de cinco modelos) y el salto entre el primer y el último punto de 5.07\gr{} a 0.87\gr{}. En la variante con eliminación de ruido, el salto bajó de 3.04\gr{} a 0.57\gr{} y la ganancia de corrección de 0.296 a 0.337. Un conjunto amplio de componentes adicionales no aportó mejoras, lo que sugiere que el límite actual es el tamaño de los datos (240 ciclos de entrenamiento). Un modelo fundacional de series de tiempo (TimesFM 2.5) usado como codificador congelado no mejoró los resultados: su error fue igual al de pesos aleatorios y mayor que el del GRU. Un control no planeado, una proyección lineal de la serie cruda con el mismo decodificador, obtuvo un error menor que el del codificador recurrente, lo que indica que este no es el factor que limita el rendimiento. Se discuten las limitaciones del diseño, entre ellas la selección de hiperparámetros sobre el conjunto de prueba de control.
