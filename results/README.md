@@ -28,7 +28,7 @@ En la prueba t pareada del refinado frente al original, el MAE y el salto de cie
 
 ## Codificador fundacional congelado
 
-El codificador es TimesFM 2.5 (200 millones de parámetros) con el bloque 9 y el promedio y el último parche como agrupación, configuración elegida sobre validación con una semilla, y una proyección lineal entrenable con decaimiento de pesos $10^{-3}$. El decodificador es el refinado. Se muestran los modelos de tipo A.
+El codificador es TimesFM 2.5 (200 millones de parámetros) con el bloque de índice 9 (el décimo, numerando desde cero; los informes lo llaman bloque 10, y el último bloque, índice 19, aparece como bloque 20) y el promedio y el último parche como agrupación, configuración elegida sobre validación con una semilla, y una proyección lineal entrenable con decaimiento de pesos $10^{-3}$. El decodificador es el refinado. Se muestran los modelos de tipo A.
 
 $$
 \begin{array}{lcccc}
