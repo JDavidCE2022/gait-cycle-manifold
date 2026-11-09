@@ -38,11 +38,11 @@
 Jesús David Cantellón\\
 {\small Universidad EAFIT, Práctica Investigativa III (2026-2)}\\
 {\small Profesor de la asignatura: Fredy Hernán Marín Sánchez \quad|\quad Tutor científico: Juan David Martínez Vargas}\\
-{\small 25 de octubre de 2026}
+{\small 25 de octubre de 2026 (actualizado el 8 de noviembre de 2026)}
 \end{center}
 
 \begin{abstract}\noindent
-Este informe describe los métodos de un estudio sobre un autoencoder recurrente (GRU) que modela ciclos completos de marcha de seis ángulos articulares remuestreados a 101 puntos. El trabajo se enmarca en el proyecto NeuroStrideAI (exoesqueleto pediátrico) y busca un modelo normativo que reconstruya ciclos con fidelidad, produzca ciclos periódicos y, en su variante denoising, corrija trayectorias atípicas. Se definen los objetivos y las hipótesis, se describen los datos y la partición por sujeto, los modelos de referencia, las dos modificaciones propuestas (código latente en cada paso del decodificador y pérdida de cierre del ciclo), el protocolo experimental con cinco semillas y prueba t pareada, y las métricas. Se incluye una matriz que relaciona cada objetivo con su hipótesis, método y criterio de decisión, el método planeado con un codificador preentrenado (modelo fundacional de series de tiempo) y las suposiciones y limitaciones del diseño.
+Este informe describe los métodos de un estudio sobre un autoencoder recurrente (GRU) que modela ciclos completos de marcha de seis ángulos articulares remuestreados a 101 puntos. El trabajo se enmarca en el proyecto NeuroStrideAI (exoesqueleto pediátrico) y busca un modelo normativo que reconstruya ciclos con fidelidad, produzca ciclos periódicos y, en su variante denoising, corrija trayectorias atípicas. Se definen los objetivos y las hipótesis, se describen los datos y la partición por sujeto, los modelos de referencia, las dos modificaciones propuestas (código latente en cada paso del decodificador y pérdida de cierre del ciclo), el protocolo experimental con cinco semillas y prueba t pareada, y las métricas. Se incluye una matriz que relaciona cada objetivo con su hipótesis, método y criterio de decisión, el método del experimento con un codificador preentrenado (modelo fundacional de series de tiempo) y los controles usados para interpretarlo, y las suposiciones y limitaciones del diseño.
 \end{abstract}
 
 
@@ -53,23 +53,25 @@ El proyecto NeuroStrideAI desarrolla modelos de aprendizaje profundo para el an�
 
 En este informe cada ciclo de marcha se trata como un punto de $\R^{101\times 6}$ y se estudia un modelo de variedad de ciclos: un autoencoder que comprime el ciclo en un código latente y lo reconstruye \cite{hinton2006}. La comparación inicial del proyecto \cite{neurostride2026} evalúa siete modelos sobre los mismos datos; entre los modelos que aprenden de los datos, las dos variantes del autoencoder recurrente tuvieron los mayores errores de reconstrucción (MAE de 5.17\gr{} y 5.35\gr{}) y saltos grandes entre el primer y el último punto del ciclo reconstruido (4.94\gr{} y 3.45\gr{}), a pesar de que un ciclo de marcha es una curva periódica. Este informe define cómo se estudian las causas probables de esas dos deficiencias y cómo se verifican las correcciones propuestas.
 
-\textbf{Trabajo previo y contribución de este estudio.} Este estudio se apoya en el trabajo previo del equipo del proyecto NeuroStrideAI: el pipeline de procesamiento (estimación de pose, cálculo de ángulos articulares y segmentación de ciclos), la preparación del conjunto de ciclos con su control de calidad y su partición por sujeto, y la comparación inicial de siete modelos con las evaluaciones de fidelidad, corrección y tipicidad \cite{neurostride2026}. La contribución propia de este informe es el diagnóstico de las dos limitaciones del autoencoder recurrente, las dos modificaciones propuestas, el protocolo de validación con cinco semillas y prueba t pareada, las métricas de forma de la sección~\ref{sec:metricas}, el estudio de componentes adicionales y la planificación del codificador preentrenado.
+\textbf{Trabajo previo y contribución de este estudio.} Este estudio se apoya en el trabajo previo del equipo del proyecto NeuroStrideAI: el pipeline de procesamiento (estimación de pose, cálculo de ángulos articulares y segmentación de ciclos), la preparación del conjunto de ciclos con su control de calidad y su partición por sujeto, y la comparación inicial de siete modelos con las evaluaciones de fidelidad, corrección y tipicidad \cite{neurostride2026}. La contribución propia de este informe es el diagnóstico de las dos limitaciones del autoencoder recurrente, las dos modificaciones propuestas, el protocolo de validación con cinco semillas y prueba t pareada, las métricas de forma de la sección~\ref{sec:metricas}, el estudio de componentes adicionales y la evaluación del codificador preentrenado.
 
 %--------------------------------------------------------------------
 \section{Objetivos e hipótesis}
 
+En este informe, $\mathcal E$ es el error absoluto medio de reconstrucción (MAE), $\mathcal J$ el salto de cierre (diferencia media entre el primer y el último punto del ciclo reconstruido) y $\gamma$ la ganancia de corrección; sus definiciones se dan en la sección~\ref{sec:metricas}.
+
 \subsection{Objetivo general}
 
-Mejorar un autoencoder recurrente de ciclos de marcha para que reconstruya con fidelidad ciclos de control no vistos y produzca ciclos periódicos, extender la mejora a su variante denoising para corregir trayectorias atípicas, y establecer con un protocolo reproducible cómo se compara con modelos de referencia.
+Mejorar un autoencoder recurrente de ciclos de marcha para reducir su error de reconstrucción y su defecto de cierre sobre ciclos de control no vistos, extender la mejora a su variante con eliminación de ruido para aumentar su ganancia de corrección, y establecer, con un protocolo reproducible de cinco semillas, cómo se compara con modelos de referencia y con un codificador fundacional congelado.
 
 \subsection{Objetivos específicos}
 
 \begin{enumerate}[label=\textbf{O\arabic*.},leftmargin=2.2em]
-\item Construir un conjunto de ciclos normalizados con partición por sujeto, sin fuga de información entre entrenamiento, validación y prueba.
-\item Establecer una línea base con modelos de referencia y un protocolo de evaluación común (fidelidad, corrección y tipicidad).
-\item Corregir dos limitaciones identificadas en el autoencoder recurrente: la pérdida de información del código a lo largo del decodificador y la ausencia de periodicidad en el ciclo reconstruido.
-\item Extender las correcciones a la variante denoising y evaluar su efecto sobre la capacidad de corrección.
-\item Evaluar si un codificador preentrenado (modelo fundacional de series de tiempo) mejora las métricas frente al autoencoder recurrente entrenado desde cero.
+\item Construir un conjunto de ciclos normalizados de $101\times 6$ con control de calidad y partición por sujeto, de modo que los conjuntos de sujetos de entrenamiento, validación, prueba de control y prueba externa sean disjuntos.
+\item Establecer una línea base con siete modelos de referencia y un protocolo de evaluación común que calcule $\mathcal E$, $\mathcal J$, $\gamma$ y una ganancia de tipicidad con las mismas particiones y semillas.
+\item Cuantificar el efecto del código en cada paso y de la pérdida de cierre sobre $\mathcal E$ y $\mathcal J$ del modelo A, y determinar el compromiso en función de $w$ (H1, H2).
+\item Aplicar las modificaciones a la variante con eliminación de ruido (modelo B) y medir su efecto sobre $\mathcal J$ y $\gamma$ (H3), y medir el efecto del ensamble de cinco modelos (H4).
+\item Evaluar si un codificador fundacional congelado mejora $\mathcal E$ o $\gamma$ frente al modelo mejorado, con controles de pesos aleatorios y de serie cruda (H5).
 \end{enumerate}
 
 \subsection{Hipótesis}
@@ -78,10 +80,10 @@ Cada hipótesis se contrasta con la métrica y el criterio indicados en la secci
 
 \begin{enumerate}[label=\textbf{H\arabic*.},leftmargin=2.2em]
 \item Entregar el código latente $z$ al decodificador en cada paso (y no solo como estado inicial) reduce el error de reconstrucción en ciclos de control no vistos.
-\item Añadir a la pérdida un término que penalice la diferencia entre el primer y el último punto del ciclo reconstruido reduce el salto de cierre, y existe un peso del término para el cual el error de reconstrucción no empeora de forma apreciable.
+\item Añadir a la pérdida un término que penalice la diferencia entre el primer y el último punto del ciclo reconstruido reduce el salto de cierre, y existe un peso $w^\ast>0$ para el cual el error de reconstrucción no empeora en más de $\varepsilon=0.23$\gr{} respecto del modelo original, con $\varepsilon$ igual a una desviación estándar entre semillas del error del modelo original, que se toma como escala de referencia de la variabilidad.
 \item Las dos modificaciones aplicadas a la variante denoising reducen el salto de cierre y aumentan la ganancia de corrección.
-\item Promediar las predicciones de cinco modelos entrenados con semillas distintas (ensamble) reduce el error y el salto frente a un modelo individual.
-\item (Planeada) Un codificador preentrenado de series de tiempo, con un decodificador entrenado sobre sus representaciones, mejora al menos una de las métricas de fidelidad o corrección frente al autoencoder recurrente mejorado.
+\item Promediar las predicciones de cinco modelos entrenados con semillas distintas (ensamble) reduce el error y el salto frente al promedio de los modelos que lo componen.
+\item Un codificador preentrenado de series de tiempo, congelado y con una proyección lineal entrenable, con un decodificador entrenado sobre sus representaciones, mejora al menos una de las métricas de fidelidad o corrección frente al autoencoder recurrente mejorado.
 \end{enumerate}
 
 %--------------------------------------------------------------------
@@ -179,17 +181,17 @@ Para delimitar dónde está el cuello de botella se probaron componentes adicion
 \item \textbf{Cambios de entrenamiento del modelo B:} penalización de consistencia entre los códigos del ciclo limpio y del dañado, intensidad del daño (0.5, 1.0, 1.5) y currículo de daño creciente.
 \end{itemize}
 
-\subsection{Método planeado: codificador preentrenado}
+\subsection{Codificador fundacional congelado y controles}
 \label{sec:fundacional}
 
-Como siguiente etapa (H5), y por sugerencia del tutor científico, se evaluará un modelo fundacional de series de tiempo, TimesFM \cite{das2024timesfm}, un transformador solo decodificador preentrenado para pronóstico. El diseño previsto es el siguiente.
+Para la hipótesis H5, y por sugerencia del tutor científico, se evaluó TimesFM 2.5 \cite{das2024timesfm}, un transformador solo decodificador preentrenado para pronóstico (200 millones de parámetros, parches de 32 puntos), congelado. El diseño ejecutado es el siguiente.
 \begin{enumerate}
-\item Cada una de las seis señales estandarizadas se presenta al modelo congelado como una serie univariada de 101 puntos, y se extraen sus representaciones internas, resumidas por promedio sobre los segmentos temporales que el modelo procesa.
-\item Las representaciones de los seis canales se concatenan y una capa lineal entrenable las proyecta al código $z$.
-\item Se usa el decodificador del modelo A mejorado (modificaciones 1 y 2), entrenado desde cero, con la misma pérdida y el mismo protocolo.
-\item Se compara con el modelo A mejorado bajo las mismas métricas, particiones y cinco semillas; la semilla afecta solo la inicialización de la proyección y del decodificador.
+\item Cada una de las seis señales estandarizadas se trata como una serie univariada de 101 puntos que se remuestrea linealmente a 128 puntos (cuatro parches de 32). Como el modelo normaliza internamente cada serie por instancia, se añaden la media y la desviación estándar de la serie.
+\item Se toma el estado oculto de un bloque del modelo, se promedian los cuatro parches y se añade el estado del último parche. Cada canal aporta 2562 características y los seis canales suman 15\,372.
+\item Una capa lineal entrenable proyecta esas características estandarizadas al código $z$ ($d=32$ en el modelo A y $d=16$ en el modelo B).
+\item Se usa el decodificador mejorado (modificaciones 1 y 2), entrenado desde cero, con la misma pérdida y el mismo protocolo, y se compara con el modelo mejorado bajo las mismas métricas, particiones y cinco semillas; en el modelo B, las características se recalculan en cada lote sobre el ciclo dañado.
 \end{enumerate}
-La viabilidad técnica (interfaz para extraer representaciones, ajuste de la longitud de la serie y cómputo en GPU) debe verificarse antes de ejecutar este experimento.
+El bloque, la agrupación de parches y el decaimiento de pesos se eligieron entre ocho configuraciones con el conjunto de validación y una semilla. La carga de los pesos se verificó con un pronóstico de 32 puntos de una onda seno. Para interpretar el resultado se añadieron dos controles con el mismo decodificador y las mismas semillas: TimesFM con pesos aleatorios, que separa el aporte del preentrenamiento del de la arquitectura, y una proyección lineal de la serie cruda aplanada (606 valores), que indica qué se logra sin un modelo preentrenado. El detalle de la configuración elegida y de los resultados se presenta en el Informe 3.
 
 %--------------------------------------------------------------------
 \section{Protocolo experimental}
@@ -208,7 +210,7 @@ El peso $w$ y el tamaño del código se exploraron observando las métricas sobr
 
 \subsection{Reproducibilidad}
 
-Los datos derivados, los guiones de entrenamiento y evaluación, y los resultados por semilla se almacenan en archivos versionados; la partición por sujeto se guarda en un archivo y las semillas se fijan en cada guion. El código y los resultados se publicarán en un repositorio de GitHub, cuyo enlace se incluirá en la versión final del artículo.
+Los datos derivados, los guiones de entrenamiento y evaluación, y los resultados por semilla se almacenan en archivos versionados; la partición por sujeto se guarda en un archivo y las semillas se fijan en cada guion. El código y los resultados se encuentran en el repositorio \texttt{github.com/JDavidCE2022/\allowbreak gait-cycle-manifold}.
 
 %--------------------------------------------------------------------
 \section{Métricas de evaluación}
@@ -252,10 +254,10 @@ Objetivo & Hipótesis & Método & Métrica & Criterio \\
 O1 & -- & Ciclos con control de calidad, interpolación PCHIP, partición por sujeto, estandarización (sección 3) & Conteo de sujetos y ciclos por conjunto & Ningún sujeto en más de un conjunto \\
 O2 & -- & Siete modelos de referencia y tres evaluaciones comunes (secciones 4.1 y 6) & I, II y III & Cifras reproducibles con las mismas particiones \\
 O3 & H1 & Modificación 1 (código en cada paso) frente al modelo base & $\Mae$ en \texttt{control\_test} & Prueba t pareada, 5 semillas, $p<0.05$ \\
-O3 & H2 & Modificación 2 (pérdida de cierre) y barrido de $w$ & Salto de cierre y $\Mae$ & Prueba t pareada; efecto sobre $\Mae$ reportado \\
+O3 & H2 & Modificación 2 (pérdida de cierre) y barrido de $w$ & Salto de cierre y $\Mae$ & Prueba t pareada; $\Mae$ no mayor que el original más $\varepsilon$ \\
 O4 & H3 & Modificaciones 1 y 2 en el modelo B & Salto y ganancia de corrección & Prueba t pareada, 5 semillas \\
-O3, O4 & H4 & Ensamble de 5 modelos (sección 4.6) & $\Mae$, salto, corrección & Comparación con el modelo individual (un solo ensamble: sin prueba) \\
-O5 & H5 & Codificador TimesFM congelado y decodificador entrenado (sección 4.8) & $\Mae$, salto, corrección & Prueba t pareada, 5 semillas \\
+O4 & H4 & Ensamble de 5 modelos (sección 4.6) & $\Mae$, salto, corrección & Comparación con el promedio de sus miembros (un solo ensamble: sin prueba) \\
+O5 & H5 & Codificador TimesFM congelado y decodificador entrenado, con dos controles (sección 4.8) & $\Mae$, salto, corrección & Prueba t pareada, 5 semillas \\
 O3 & -- & Componentes adicionales (sección 4.7) & Métricas de fidelidad y de forma & Exploratorio; confirmación con 5 semillas \\
 \bottomrule
 \end{tabularx}
@@ -285,11 +287,11 @@ O3 & -- & Componentes adicionales (sección 4.7) & Métricas de fidelidad y de f
 \item \textbf{Alcance de la prueba t.} Con cinco semillas, la prueba t pareada mide la variabilidad por inicialización y orden de los lotes, no por muestreo de sujetos. Se probaron muchas variantes y no se corrigió por comparaciones múltiples, por lo que los valores $p$ deben leerse con cautela. El efecto individual de las modificaciones 1 y 2 se confirmó con cinco semillas solo en su combinación; por separado se exploró con una semilla.
 \item \textbf{Ensambles.} Cada ensamble proviene de un único conjunto de cinco modelos; no se midió cuánto varía un ensamble de otro.
 \item \textbf{Evaluación II.} La ganancia de corrección usa una sola realización del daño aleatorio. Para el modelo B, la parada temprana se hace con ciclos limpios en validación, no dañados.
-\item \textbf{Evaluación III.} No se ha recalculado para las versiones mejoradas de los modelos; las cifras de tipicidad e intervención disponibles son las de la comparación inicial del proyecto.
+\item \textbf{Evaluación III.} La tipicidad y la intervención de las versiones mejoradas se calcularon con las mismas particiones (Informe 3); los modelos de referencia no se reevaluaron y sus cifras son las de la comparación inicial del proyecto.
 \item \textbf{Modelos de referencia.} PCA, el proceso gaussiano y los autoencoders convolucionales se evalúan con una sola corrida de la comparación inicial del proyecto y no se ajustaron con el mismo esfuerzo que la red recurrente; el autoencoder convolucional denoising no se reevaluó con cinco semillas.
-\item \textbf{Datos reconstruidos.} Los datos derivados se reconstruyeron a partir de los archivos entregados; las cifras reproducidas del modelo original (MAE 5.01\gr{}) difieren ligeramente de las de la comparación inicial (5.17\gr{}).
+\item \textbf{Datos reconstruidos.} Los datos derivados se reconstruyeron a partir de los archivos entregados; las cifras reproducidas del modelo original (MAE $4.99\pm0.23$\gr{} en el modelo A) difieren ligeramente de las de la comparación inicial (5.17\gr{}).
 \item \textbf{Procedencia y etiquetas.} La etiqueta control/caso proviene del reporte de migración del proyecto; el protocolo ético y de consentimiento aplicable a estos datos debe confirmarse con el tutor científico antes de cualquier uso o difusión de los datos.
-\item \textbf{Método planeado.} El modelo fundacional se entrenó para pronóstico, no para reconstrucción de ciclos cortos; su utilidad como codificador es una hipótesis (H5) y no se ha probado.
+\item \textbf{Modelo fundacional.} TimesFM se entrenó para pronóstico, no para reconstrucción de ciclos cortos; se evaluó un solo modelo y un solo diseño de uso (H5), por lo que el resultado no se extiende a otros modelos ni a otros diseños.
 \end{enumerate}
 
 %--------------------------------------------------------------------

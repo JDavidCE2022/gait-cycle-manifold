@@ -166,6 +166,19 @@ evaluadas en 47 ciclos limpios de prueba de control ($\mathcal E$, $\mathcal J$)
 
 Para cada métrica y semilla $s$ se calcula la diferencia pareada entre configuración y referencia; con media $\bar\Delta$ y desviación $s_\Delta$ de las cinco diferencias, el estadístico $T=\bar\Delta/(s_\Delta/\sqrt5)\sim t_4$ bajo la hipótesis nula de diferencia media cero, y el intervalo de confianza de 95\% es $\bar\Delta\pm2.776\,s_\Delta/\sqrt5$. La prueba es de dos colas con $\alpha=0.05$, sin corrección por comparaciones múltiples. Los resultados con una semilla son exploratorios y no se usan como evidencia.
 
+\subsection{Desviaciones respecto del plan de métodos}
+\label{sec:desv}
+
+Respecto de lo planeado en el Informe 2 (versión del 25 de octubre de 2026), la ejecución difirió en lo siguiente:
+\begin{enumerate}[label=(\roman*)]
+\item El codificador fundacional se planeó con las series de 101 puntos y promedio de los segmentos; se ejecutó con remuestreo a 128 puntos (cuatro parches), promedio y último parche, y la media y la desviación estándar de la serie como características adicionales.
+\item Se planeó evaluar el codificador fundacional solo con el modelo A; se evaluó también en el modelo B.
+\item Los controles de pesos aleatorios y de serie cruda no estaban en el plan y se añadieron para interpretar el resultado. La primera versión del control aleatorio tuvo un defecto que se corrigió y el control se repitió.
+\item La configuración del codificador (bloque, agrupación y decaimiento de pesos) se eligió entre ocho configuraciones con el conjunto de validación, algo que el plan solo dejaba abierto.
+\item El umbral $\varepsilon$ de H2 y la formulación de H4 (frente al promedio de los miembros) se precisaron después de conocer los resultados; el Informe 2 se actualizó con esa redacción. Se añadieron además las diferencias pareadas con intervalo de confianza y las métricas de forma.
+\item La tipicidad y la intervención de los modelos mejorados, que el plan no incluía, se calcularon con las mismas particiones.
+\end{enumerate}
+
 %====================================================================
 \section{Resultados}
 \label{sec:resultados}
