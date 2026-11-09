@@ -1,0 +1,335 @@
+\documentclass[11pt,a4paper]{article}
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{mathptmx}
+\usepackage[margin=2.5cm]{geometry}
+\usepackage{amsmath,amssymb}
+\usepackage{booktabs,array,tabularx}
+\usepackage{enumitem}
+\usepackage{setspace}
+\usepackage{fancyhdr}
+\usepackage[colorlinks=true,linkcolor=black,citecolor=black,urlcolor=black]{hyperref}
+
+\setstretch{1.0}
+\setlength{\parindent}{1.2em}
+\setlength{\parskip}{2pt}
+\setlist{itemsep=1pt,topsep=3pt}
+\renewcommand{\arraystretch}{1.12}
+\pagestyle{fancy}
+\fancyhf{}
+\fancyhead[L]{\small Práctica Investigativa III, 2026-2 -- Informe 1: Introducción}
+\fancyfoot[C]{\small\thepage}
+\renewcommand{\headrulewidth}{0.3pt}
+\emergencystretch=2em
+
+\renewcommand{\abstractname}{Resumen}
+\renewcommand{\contentsname}{Contenido}
+\renewcommand{\refname}{Referencias}
+\renewcommand{\tablename}{Tabla}
+\renewcommand{\figurename}{Figura}
+
+\newcommand{\gr}{$^{\circ}$}
+\newcommand{\Mae}{\mathrm{MAE}}
+\newcommand{\R}{\mathbb{R}}
+\newcommand{\E}{\mathbb{E}}
+
+\begin{document}
+
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{%
+\small\textbf{Visto bueno del tutor científico} (Juan David Martínez Vargas, Universidad EAFIT)\\[10pt]
+Firma: \hrulefill\hspace{1.5em} Fecha: \rule{3cm}{0.4pt}}}
+
+\vspace{10pt}
+\begin{center}
+{\large\bfseries Modelado normativo de ciclos de marcha con un autoencoder recurrente:\\ revisión bibliográfica, vacío de investigación, pregunta e hipótesis, y objetivos}\\[8pt]
+Jesús David Cantellón\\
+{\small Universidad EAFIT, Práctica Investigativa III (2026-2)}\\
+{\small Profesor de la asignatura: Fredy Hernán Marín Sánchez \quad|\quad Tutor científico: Juan David Martínez Vargas}\\
+{\small 8 de noviembre de 2026}
+\end{center}
+
+\begin{abstract}\noindent
+Este informe presenta la introducción de un estudio sobre modelos normativos de ciclos de marcha, enmarcado en el proyecto NeuroStrideAI (exoesqueleto pediátrico). Cada ciclo se representa como un punto de $\R^{101\times 6}$ (101 instantes del ciclo y seis ángulos articulares) y se modela con un autoencoder recurrente. Se expone el método de una revisión bibliográfica dirigida por cuatro preguntas (índices y referencias normativas de marcha, autoencoders aplicados a marcha, periodicidad del ciclo, y modelos fundacionales de series de tiempo) y se sintetizan 24 fuentes. A partir de la revisión y de la comparación inicial del proyecto, en la que el autoencoder recurrente tuvo el mayor error de reconstrucción entre los modelos que aprenden de los datos y produjo ciclos cuyos extremos no coinciden, se identifican una incoherencia y tres vacíos. Se formaliza el problema, se proponen una pregunta de investigación y cinco hipótesis con contenido matemático (cada una con su estadístico y criterio de decisión) y se definen un objetivo general y cinco objetivos específicos medibles, alineados con las hipótesis.
+\end{abstract}
+
+\noindent\textbf{Palabras clave:} análisis de marcha, modelo normativo, autoencoder, red recurrente, periodicidad, modelo fundacional de series de tiempo.
+
+%--------------------------------------------------------------------
+\section{Introducción}
+
+La marcha humana es un movimiento periódico que se describe con las trayectorias angulares de las articulaciones del miembro inferior a lo largo del ciclo de zancada. En niños con parálisis cerebral, el análisis cuantitativo de esas trayectorias apoya la evaluación clínica y el seguimiento de intervenciones \cite{schwartz2008,baker2009}, y una línea reciente propone aprender la marcha de referencia de personas sin patología para usarla como trayectoria objetivo de un exoesqueleto pediátrico \cite{kolaghassi2023}. El proyecto NeuroStrideAI, en el que se enmarca este trabajo, desarrolla herramientas de ese tipo: un clasificador de las formas de diplejía espástica \cite{ferrari2019}, un procedimiento de estimación de ángulos articulares a partir de video y, como objeto de este estudio, un modelo normativo de ciclos completos \cite{neurostride2026}.
+
+En este trabajo cada ciclo estandarizado se trata como un elemento $G\in\R^{101\times 6}$, con $g_t\in\R^6$ el vector de ángulos en el instante $t$ del ciclo (0 a 100\%). Un autoencoder aprende una variedad de baja dimensión que aproxima el conjunto de ciclos de control: un codificador comprime $G$ en un código $z\in\R^d$ con $d\ll 606$ y un decodificador lo reconstruye \cite{hinton2006}. Si el modelo es adecuado, la reconstrucción de un ciclo de control no visto es fiel, el ciclo reconstruido es periódico y, en su variante entrenada con ciclos dañados, el modelo proyecta ciclos atípicos hacia la variedad de lo típico \cite{vincent2008}.
+
+La comparación inicial del proyecto evaluó siete modelos sobre los mismos datos \cite{neurostride2026}. Entre los modelos que aprenden de los datos, las dos variantes del autoencoder recurrente tuvieron los mayores errores de reconstrucción y ciclos reconstruidos cuyo primer y último punto no coinciden, aunque la marcha es periódica. Este resultado, que contrasta con lo esperado de un modelo diseñado para secuencias, es el punto de partida del estudio.
+
+El informe se organiza de acuerdo con los criterios de una introducción de investigación: la sección~\ref{sec:revision} presenta la revisión bibliográfica y su método; la sección~\ref{sec:vacio}, el vacío y la incoherencia identificados; la sección~\ref{sec:pregunta}, la pregunta y las hipótesis; y la sección~\ref{sec:objetivos}, los objetivos. Los métodos y los resultados se tratan en informes posteriores.
+
+%--------------------------------------------------------------------
+\section{Revisión bibliográfica}
+\label{sec:revision}
+
+\subsection{Método de la revisión}
+\label{sec:metodo_revision}
+
+\textbf{Preguntas guía.} La revisión se dirigió con cuatro preguntas:
+\begin{enumerate}[label=\textbf{P\arabic*.},leftmargin=2.2em]
+\item ¿Cómo se ha cuantificado la marcha respecto a una referencia sin patología, y con qué limitaciones reconocidas?
+\item ¿Cómo se han usado autoencoders y redes recurrentes con datos de marcha, en particular de niños con parálisis cerebral?
+\item ¿Cómo se representa o se impone la periodicidad del ciclo en modelos de movimiento cíclico?
+\item ¿Qué se sabe del uso de modelos fundacionales de series de tiempo en biomecánica y de su uso como extractores de representaciones?
+\end{enumerate}
+
+\textbf{Fuentes y consultas.} La búsqueda se hizo en noviembre de 2026 con un motor de búsqueda web de uso general. Los metadatos de cada fuente retenida (autores, título, medio, año, volumen y DOI) se verificaron en la página de la editorial, de PubMed, de las actas correspondientes (PMLR, ICLR, NeurIPS) o de arXiv. Se partió de las referencias del trabajo previo del proyecto y se complementó con las consultas de la tabla~\ref{tab:consultas}; además, se hicieron búsquedas por título para verificar las fuentes ya conocidas y localizar los datos bibliográficos faltantes.
+
+\begin{table}[h]
+\centering\small
+\begin{tabularx}{\textwidth}{@{}l>{\raggedright\arraybackslash}X@{}}
+\toprule
+Pregunta & Cadena de búsqueda (en inglés) \\
+\midrule
+P1 & \textit{Gait Deviation Index new comprehensive index of gait pathology} \\
+P1, P2 & \textit{machine learning in human movement biomechanics best practices common pitfalls new opportunities} \\
+P1, P2 & \textit{deep learning gait analysis children cerebral palsy systematic review machine learning gait classification} \\
+P1 & \textit{deep neural networks quantitative movement analysis single-camera videos cerebral palsy} \\
+P2 & \textit{autoencoder gait kinematics normative reference cerebral palsy deep learning} \\
+P3 & \textit{DeepPhase periodic autoencoders for learning motion phase manifolds} \\
+P4 & \textit{time series foundation model gait biomechanics frozen representations evaluation} \\
+P4 & \textit{unified training of universal time series forecasting transformers}; \textit{reversible instance normalization time-series forecasting}; \textit{TimesFM 2.5 model release} \\
+\bottomrule
+\end{tabularx}
+\caption{Cadenas de búsqueda por pregunta guía.}
+\label{tab:consultas}
+\end{table}
+
+\textbf{Criterios de inclusión.} Se incluyeron las fuentes que (i) respondían directamente a una de las cuatro preguntas; (ii) estaban publicadas en revistas o actas con revisión por pares, o eran preprints, talleres o documentación oficial de un modelo cuando se trataba de desarrollos recientes aún no publicados en medios arbitrados, lo que se indica en el texto; (iii) trataban datos de marcha o movimiento, o modelos de series de tiempo de propósito general; y (iv) eran recientes (2019--2026), salvo los trabajos que definen los conceptos que usa el estudio (autoencoders, redes recurrentes, índices de marcha), que se citan por su valor histórico. Se excluyeron notas de prensa, entradas de blog y documentos cuyos metadatos no pudieron verificarse.
+
+\textbf{Selección crítica.} Cada fuente se valoró con tres criterios: el tamaño y la representatividad de los datos, la forma de partición usada (por sujeto o no) y la relación con el problema (modelos normativos de ciclos completos). Las fuentes se presentan en orden cronológico dentro de cada tema para mostrar la evolución del conocimiento.
+
+\textbf{Limitaciones de la revisión.} No se consultaron bases de datos institucionales (Scopus, Web of Science, IEEE Xplore) ni se siguió un protocolo de revisión sistemática; no se registró el número de resultados por consulta. Por ello, las afirmaciones de que algo ``no se encontró'' se refieren a las fuentes examinadas y no a toda la literatura. La revisión debe completarse con esas bases antes de una publicación formal.
+
+\subsection{Cuantificación de la marcha y referencias normativas}
+
+Los primeros índices resumen la marcha de un individuo en una sola cifra que mide su distancia a una referencia sin patología. El Índice de Desviación de la Marcha \cite{schwartz2008} se construye a partir de curvas cinemáticas y de datos de controles; el Gait Profile Score \cite{baker2009} resume las diferencias entre las curvas de un individuo y las medias de un grupo de referencia en variables cinemáticas clave y se acompaña del Movement Analysis Profile, que muestra la contribución de cada variable. Ambos se basan en la media y la dispersión de los controles y no incluyen un modelo no lineal de la variedad de marcha.
+
+La incorporación del aprendizaje automático al análisis de movimiento se revisó en \cite{halilaj2018}, que señala que la mayoría de los estudios de pacientes con enfermedades musculoesqueléticas y neuromusculares se centraron en clasificar movimiento patológico. Una revisión sistemática más reciente, sobre marcha en parálisis cerebral y accidente cerebrovascular, identificó 63 estudios entre 4120 referencias (31 con métodos supervisados y 32 con no supervisados), con redes neuronales como método supervisado más usado, y señaló tres obstáculos para el uso clínico: elección de características y algoritmos sin justificar, conjuntos de datos poco representativos y grupos difíciles de interpretar clínicamente \cite{samadi2024}.
+
+En cuanto a la medición, \cite{kidzinski2020} mostró que una red neuronal puede estimar parámetros de marcha de pacientes con parálisis cerebral a partir de video con una sola cámara, lo que habilita pipelines como el de NeuroStrideAI, y también implica que los ángulos provienen de una estimación con ruido. La partición por sujeto es una condición para estimar con honestidad el desempeño sobre personas nuevas \cite{saeb2017}.
+
+\subsection{Autoencoders y redes recurrentes con datos de marcha}
+
+El autoencoder como método de reducción no lineal de dimensión se consolidó con \cite{hinton2006}, y su variante con eliminación de ruido, que reconstruye la entrada limpia a partir de una dañada, con \cite{vincent2008}. Para secuencias, \cite{cho2014} propuso un codificador-decodificador recurrente que resume la secuencia de entrada en un vector de contexto $c$ y condiciona con él cada paso del decodificador, y que introdujo la unidad recurrente con compuertas (GRU). La dificultad de las redes recurrentes para propagar información a lo largo de muchos pasos (desvanecimiento y explosión del gradiente) está documentada en \cite{pascanu2013}.
+
+En marcha, \cite{kolaghassi2023} comparó modelos de aprendizaje profundo para predecir trayectorias estables como referencia de un exoesqueleto para niños con parálisis cerebral, y \cite{ferrari2019} clasificó la diplejía espástica con redes recurrentes. Un autoencoder se usó para construir un índice de calidad de la marcha, el Shriners Gait Index, con datos de 412 menores de 18 años y características temporoespaciales, cinemáticas y cinéticas; el índice capturó más de 89\% de la varianza con validación cruzada por sujeto y se usó para comparar resultados quirúrgicos en parálisis cerebral \cite{wang2024}. Un autoencoder con eliminación de ruido apilado, combinado con una red LSTM, se usó para reconocer cuatro fases de la marcha de seis niños con parálisis cerebral leve a partir de sensores inerciales de un exoesqueleto de tobillo, con una exactitud de 97.83\% sin ruido \cite{pang2025}.
+
+Dos observaciones sobre estas fuentes son relevantes. Primero, los autoencoders se usaron sobre vectores de características resumen o sobre señales para clasificar fases, y no como modelos generativos de ciclos completos cuya reconstrucción se evalúe en detalle. Segundo, los tamaños de muestra son pequeños (seis niños en \cite{pang2025}; 412 sujetos en \cite{wang2024}), lo que coincide con la observación de datos poco representativos de \cite{samadi2024}.
+
+\subsection{Periodicidad del ciclo}
+
+El carácter periódico se ha representado de dos maneras en las fuentes revisadas. En el modelado probabilístico se usan núcleos periódicos, como el núcleo exponencial-seno de los procesos gaussianos \cite{rasmussen2006}. En animación de movimiento, el autoencoder periódico \cite{starke2022} codifica ventanas de curvas de velocidad articular en un conjunto de sinusoides con amplitud, frecuencia, desplazamiento y fase, y representa la fase como un par seno-coseno. Esta segunda línea impone la periodicidad en la estructura del código latente, no como una condición de cierre entre el primer y el último punto de un ciclo reconstruido. En las fuentes examinadas no se encontró una pérdida de cierre explícita para la reconstrucción de ciclos de marcha.
+
+\subsection{Modelos fundacionales de series de tiempo}
+
+Los modelos fundacionales de series de tiempo son transformadores preentrenados con grandes colecciones de series. TimesFM \cite{das2024timesfm} es un modelo solo decodificador para pronóstico; Moirai \cite{woo2024}, Chronos \cite{ansari2024chronos} y MOMENT \cite{goswami2024moment} son propuestas análogas, y esta última también se diseñó para clasificación, imputación y detección de anomalías. La versión 2.5 de TimesFM, publicada el 15 de septiembre de 2025, tiene 200 millones de parámetros, contexto de hasta 16\,000 puntos y licencia Apache 2.0 \cite{timesfm25}. Estos modelos suelen normalizar cada serie por instancia antes de procesarla, técnica que elimina las estadísticas de la serie y las restituye después \cite{kim2022revin}.
+
+En biomecánica el uso es incipiente. Chronos se usó para pronosticar alcances no registrados en una evaluación robótica del miembro superior y redujo el tiempo de la sesión manteniendo la confiabilidad de los parámetros \cite{akbarifar2025}. PathoFM, presentado en un taller en 2025, preentrena un codificador específico para marcha patológica con ciclos de 230 pacientes \cite{dey2025}. En las fuentes examinadas no se encontró una evaluación de un modelo fundacional general y congelado como codificador para reconstruir ciclos de marcha de varios ángulos con pocos ciclos de entrenamiento.
+
+\subsection{Síntesis}
+
+\begin{table}[h]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{2.4cm}>{\raggedright\arraybackslash}p{3.0cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{3.6cm}@{}}
+\toprule
+Fuente & Datos & Método y alcance & Relación con este trabajo \\
+\midrule
+\cite{schwartz2008,baker2009} & Curvas cinemáticas, controles & Índices lineales de distancia a la referencia & Antecedente de la referencia normativa \\
+\cite{halilaj2018,samadi2024} & Revisiones & Predomina la clasificación; datos poco representativos & Justifica partición por sujeto y reporte honesto \\
+\cite{kidzinski2020} & Video de pacientes con parálisis cerebral & Estimación de parámetros con red neuronal & Origen de los ángulos con ruido \\
+\cite{cho2014} & Traducción automática & Contexto $c$ en cada paso del decodificador & Fundamento de la modificación 1 \\
+\cite{wang2024} & 412 menores & Autoencoder sobre características resumen & Autoencoder en parálisis cerebral, sin reconstruir ciclos \\
+\cite{pang2025} & 6 niños, sensores inerciales & Autoencoder y LSTM para clasificar fases & Clasificación, no reconstrucción \\
+\cite{starke2022} & Captura de movimiento & Periodicidad en el código latente & Alternativa a la pérdida de cierre \\
+\cite{das2024timesfm,timesfm25} & Series de propósito general & Transformador preentrenado para pronóstico & Codificador congelado evaluado \\
+\cite{akbarifar2025,dey2025} & Miembro superior; ciclos de marcha & Pronóstico con Chronos; preentrenamiento específico & Uso incipiente en biomecánica \\
+\bottomrule
+\end{tabularx}
+\caption{Síntesis de las fuentes principales y su relación con el estudio.}
+\label{tab:sintesis}
+\end{table}
+
+%--------------------------------------------------------------------
+\section{Identificación del vacío y de la incoherencia}
+\label{sec:vacio}
+
+\subsection{Formulación del problema}
+
+Sean $E_\phi:\R^{101\times 6}\to\R^d$ el codificador, $D_\psi:\R^d\to\R^{101\times 6}$ el decodificador y $f=D_\psi\circ E_\phi$. Para $\hat G=f(G)$ se definen, sobre ciclos de control no vistos y en grados, el error de reconstrucción y el defecto de cierre:
+\begin{align}
+\mathcal E(f)&=\E\!\left[\frac{1}{606}\sum_{t=1}^{101}\sum_{c=1}^{6}\left|\hat g_{t,c}-g_{t,c}\right|\right],\\
+\mathcal J(f)&=\E\!\left[\frac{1}{6}\sum_{c=1}^{6}\left|\hat g_{1,c}-\hat g_{101,c}\right|\right].
+\end{align}
+Un ciclo periódico ideal satisface $\hat g_1=\hat g_{101}$, es decir, $\mathcal J=0$. Para la variante con eliminación de ruido, con un operador de daño aleatorio $\mathcal T$ (cambios de amplitud y desplazamiento, ruido y corrimiento de fase), la ganancia de corrección es
+\begin{equation}
+\gamma(f)=1-\frac{\E\left[\Mae\big(f(\mathcal T G),G\big)\right]}{\E\left[\Mae\big(\mathcal T G,G\big)\right]},
+\end{equation}
+con $\gamma=0$ si no se deshace nada del daño y $\gamma=1$ si se deshace por completo. El entrenamiento minimiza, sobre los ciclos de entrenamiento, la pérdida
+\begin{equation}
+\mathcal L(\phi,\psi)=\frac{1}{606}\,\E\,\|\hat G-G\|_F^2+w\,\E\!\left[\frac16\sum_{c}\left|\hat g_{1,c}-\hat g_{101,c}\right|\right],\qquad w\ge 0,
+\label{eq:perdida}
+\end{equation}
+donde $w=0$ corresponde al modelo original del proyecto.
+
+\subsection{Incoherencia en la comparación inicial del proyecto}
+
+La tabla~\ref{tab:inicial} reproduce las cifras de la comparación inicial \cite{neurostride2026}, con una corrida por modelo. Entre los modelos que aprenden de los datos, el autoencoder recurrente (modelos A y B) es el de mayor error ($\mathcal E=5.17$\gr{} y $5.35$\gr) y el de mayor defecto de cierre ($\mathcal J=4.94$\gr{} y $3.45$\gr), frente a $\mathcal E=2.78$\gr{} de PCA, un modelo lineal.
+
+\begin{table}[h]
+\centering\small
+\begin{tabular}{lcc}
+\toprule
+Modelo & $\mathcal E$ (\gr) & $\mathcal J$ (\gr) \\
+\midrule
+Media de controles & 8.77 & 0.60 \\
+PCA & 2.78 & 3.41 \\
+Autoencoder convolucional & 3.30 & 3.11 \\
+Autoencoder convolucional con eliminación de ruido & 4.07 & 1.88 \\
+Proceso gaussiano periódico & 3.30 & 0.60 \\
+Modelo A (GRU) & 5.17 & 4.94 \\
+Modelo B (GRU con eliminación de ruido) & 5.35 & 3.45 \\
+\bottomrule
+\end{tabular}
+\caption{Comparación inicial del proyecto (una corrida por modelo). $\mathcal E$: error de reconstrucción; $\mathcal J$: defecto de cierre. La media de controles no aprende de los datos; su cierre bajo es trivial.}
+\label{tab:inicial}
+\end{table}
+
+La incoherencia es doble. Por una parte, un modelo con mayor capacidad y pensado para secuencias reconstruye peor que modelos más simples. Por otra, reconstruye ciclos que no cierran aunque la marcha es periódica. Se identificaron dos causas probables, ambas con un argumento formal.
+
+\textbf{Causa 1: el código solo entra como estado inicial.} En el decodificador original, $h_0=W_0z+b_0$ y $h_t=\Phi(h_{t-1},u_t)$ con $u_t$ la codificación de fase. Si $J_k=\partial h_k/\partial h_{k-1}$, la sensibilidad del estado en el paso $t$ al código es
+\begin{equation}
+\frac{\partial h_t}{\partial z}=\Big(\prod_{k=1}^{t}J_k\Big)W_0 .
+\end{equation}
+Si $\|J_k\|\le\rho<1$, entonces $\|\partial h_t/\partial z\|\le\rho^{t}\|W_0\|$. Por ejemplo, con $\rho=0.95$ y $t=100$ la cota es $0.95^{100}\approx 0.006$ veces $\|W_0\|$. Se trata de una condición suficiente para que la influencia del código se debilite a lo largo del ciclo, no de una medición. Si $z$ se entrega además en cada entrada, $u_t'=[u_t,z]$, aparece un término directo de longitud uno,
+\begin{equation}
+\frac{\partial h_t}{\partial z}=\sum_{k=1}^{t}\Big(\prod_{j=k+1}^{t}J_j\Big)\frac{\partial h_k}{\partial u_k'}\frac{\partial u_k'}{\partial z}+\Big(\prod_{k=1}^{t}J_k\Big)W_0,
+\end{equation}
+en el que el sumando $k=t$ no incluye ningún producto de jacobianos. Esta es la configuración de \cite{cho2014}, donde el contexto condiciona cada paso.
+
+\textbf{Causa 2: la pérdida no exige periodicidad.} Con $w=0$, la pérdida~\eqref{eq:perdida} no relaciona $\hat g_1$ con $\hat g_{101}$ más que a través de los datos. Estos tampoco cierran: el salto medio entre el primer y el último punto de los ciclos reales de control es de unos $6$\gr{} tras el control de calidad \cite{neurostride2026}. Por tanto, la fidelidad a los datos no implica cierre, y el cierre debe añadirse como un término explícito con $w>0$, a costa de una posible pérdida de fidelidad que debe medirse.
+
+\subsection{Vacíos en la literatura revisada}
+
+\begin{description}[leftmargin=2.2em,style=nextline]
+\item[V1. Reconstrucción periódica de ciclos completos.] En las fuentes examinadas, los autoencoders de marcha se aplican a características resumen o a la clasificación de fases \cite{wang2024,pang2025}, y la periodicidad se impone en la estructura del código latente para movimiento no clínico \cite{starke2022}. No se encontró un estudio que cuantifique, con partición por sujeto y varias semillas, el efecto de entregar el código en cada paso del decodificador y de añadir una pérdida de cierre sobre el error y el defecto de cierre de ciclos completos de marcha.
+\item[V2. Modelos normativos con evaluación de corrección y de forma.] Los índices clásicos miden distancia a la referencia de forma lineal \cite{schwartz2008,baker2009}, y las revisiones señalan el uso de datos poco representativos y la falta de justificación de los modelos \cite{samadi2024}. Falta una evaluación que incluya, además de la fidelidad, la capacidad de corregir ciclos dañados y métricas de forma en el punto de cierre, con una incertidumbre cuantificada por semillas.
+\item[V3. Modelos fundacionales como codificadores para ciclos de marcha.] Los modelos fundacionales de series de tiempo se diseñaron para pronóstico \cite{das2024timesfm,woo2024,ansari2024chronos}, y en biomecánica se usaron para pronosticar \cite{akbarifar2025} o se preentrenaron específicamente para marcha \cite{dey2025}. No se encontró una evaluación de un modelo general congelado como codificador de ciclos cortos de seis canales con unos pocos centenares de ciclos de entrenamiento, con controles que separen el aporte del preentrenamiento del de la arquitectura.
+\end{description}
+
+\subsection{Relación entre los vacíos y la revisión}
+
+La incoherencia se relaciona con las preguntas P2 y P3 de la revisión: las fuentes sobre autoencoders no abordan la reconstrucción periódica de ciclos completos, y las que tratan la periodicidad lo hacen en el espacio latente y para movimiento no clínico. Los vacíos V1 y V2 se derivan de P1, P2 y P3 y se proponen cubrir con las modificaciones descritas en la sección~\ref{sec:pregunta}. El vacío V3 se deriva de P4 y de la sugerencia del tutor científico de evaluar un modelo fundacional. Estas relaciones se resumen en la tabla~\ref{tab:trazabilidad} de la sección~\ref{sec:objetivos}.
+
+%--------------------------------------------------------------------
+\section{Pregunta e hipótesis de investigación}
+\label{sec:pregunta}
+
+\subsection{Pregunta de investigación}
+
+Sean $f_0$ el autoencoder recurrente original ($w=0$, código solo en el estado inicial) y $f_1$ el modelo que entrega $z$ en cada paso del decodificador y se entrena con $w>0$. La pregunta general es:
+
+\begin{quote}
+\textit{¿Es posible reducir, de forma simultánea y estadísticamente verificable con cinco semillas, el error de reconstrucción $\mathcal E$ y el defecto de cierre $\mathcal J$ de un autoencoder recurrente de ciclos de marcha de control no vistos, y aumentar la ganancia de corrección $\gamma$ de su variante con eliminación de ruido, mediante la entrega del código latente en cada paso del decodificador y un término de cierre en la pérdida; y mejora un codificador fundacional congelado, con el mismo decodificador, alguna de esas métricas frente al autoencoder recurrente mejorado?}
+\end{quote}
+
+\subsection{Contraste estadístico}
+
+Para una métrica $\mathcal M$ y cada semilla $s\in\{42,1,7,123,2024\}$ se define la diferencia pareada $\Delta_s=\mathcal M(f^{\text{ref}}_s)-\mathcal M(f^{\text{nuevo}}_s)$ si $\mathcal M$ es un error ($\mathcal E$, $\mathcal J$) y $\Delta_s=\mathcal M(f^{\text{nuevo}}_s)-\mathcal M(f^{\text{ref}}_s)$ si $\mathcal M$ es una ganancia ($\gamma$), de modo que $\Delta_s>0$ indica siempre una mejora. Con $\bar\Delta$ y $s_\Delta$ la media y la desviación estándar muestral de las cinco diferencias, el estadístico es
+\begin{equation}
+T=\frac{\bar\Delta}{s_\Delta/\sqrt 5}\ \sim\ t_4\ \ \text{bajo } H_0:\ \E[\Delta]=0 ,
+\end{equation}
+y se rechaza $H_0$ con una prueba de dos colas a nivel $\alpha=0.05$ si $|T|>t_{4,0.975}=2.776$. No se aplica corrección por comparaciones múltiples; esto se reconoce como limitación. Con cinco semillas, la prueba mide la variabilidad por inicialización y orden de los lotes, no por muestreo de sujetos.
+
+\subsection{Hipótesis}
+
+\begin{enumerate}[label=\textbf{H\arabic*.},leftmargin=2.2em]
+\item \textit{Código en cada paso.} Entregar $z$ en cada paso del decodificador reduce el error de reconstrucción: $\E[\Delta^{\mathcal E}]>0$ al comparar $f_1$ con $w=0$ frente a $f_0$.
+\item \textit{Pérdida de cierre.} El término de cierre reduce el defecto de cierre, $\E[\Delta^{\mathcal J}]>0$, y existe $w^\ast>0$ tal que $\mathcal E(f_{w^\ast})-\mathcal E(f_0)\le\varepsilon$, con $\varepsilon$ igual a una desviación estándar entre semillas del error del modelo original, que se toma como escala de referencia de la variabilidad.
+\item \textit{Variante con eliminación de ruido.} Las dos modificaciones, aplicadas a la variante entrenada con ciclos dañados, reducen $\mathcal J$ y aumentan $\gamma$: $\E[\Delta^{\mathcal J}]>0$ y $\E[\Delta^{\gamma}]>0$.
+\item \textit{Ensamble.} Para el promedio $\bar f=\frac1M\sum_m f_m$ de $M=5$ modelos con semillas distintas, $\mathcal E(\bar f)<\frac1M\sum_m\mathcal E(f_m)$ y $\mathcal J(\bar f)<\frac1M\sum_m\mathcal J(f_m)$.
+\item \textit{Codificador fundacional.} Un codificador $E^{\text{TSFM}}$ congelado, con una proyección lineal entrenable y el decodificador mejorado, mejora al menos una de las métricas $\mathcal E$ o $\gamma$ frente al autoencoder recurrente mejorado, con $p<0.05$ en la prueba pareada.
+\end{enumerate}
+
+Sobre H4, la desigualdad $\mathcal E(\bar f)\le\frac1M\sum_m\mathcal E(f_m)$ se cumple siempre porque el error absoluto es convexo en la predicción, y lo mismo vale para $\mathcal J$, que es una combinación de valores absolutos de funciones lineales de la predicción. La hipótesis es la versión estricta, y lo que se estudia es la magnitud de la mejora.
+
+%--------------------------------------------------------------------
+\section{Objetivos de investigación}
+\label{sec:objetivos}
+
+\subsection{Objetivo general}
+
+Mejorar un autoencoder recurrente de ciclos de marcha para reducir su error de reconstrucción y su defecto de cierre sobre ciclos de control no vistos, extender la mejora a su variante con eliminación de ruido para aumentar su ganancia de corrección, y establecer, con un protocolo reproducible de cinco semillas, cómo se compara con modelos de referencia y con un codificador fundacional congelado.
+
+\subsection{Objetivos específicos}
+
+Cada objetivo tiene un indicador y un criterio de logro verificable (tabla~\ref{tab:trazabilidad}).
+\begin{enumerate}[label=\textbf{O\arabic*.},leftmargin=2.2em]
+\item Construir un conjunto de ciclos normalizados de $101\times 6$ con control de calidad y partición por sujeto, de modo que los conjuntos de sujetos de entrenamiento, validación, prueba de control y prueba externa sean disjuntos.
+\item Establecer una línea base con siete modelos de referencia y un protocolo de evaluación común que calcule $\mathcal E$, $\mathcal J$, $\gamma$ y una ganancia de tipicidad con las mismas particiones y semillas.
+\item Cuantificar el efecto del código en cada paso y de la pérdida de cierre sobre $\mathcal E$ y $\mathcal J$ del modelo A, y determinar el compromiso en función de $w$ (H1, H2).
+\item Aplicar las modificaciones a la variante con eliminación de ruido (modelo B) y medir su efecto sobre $\mathcal J$ y $\gamma$ (H3), y medir el efecto del ensamble de cinco modelos (H4).
+\item Evaluar si un codificador fundacional congelado mejora $\mathcal E$ o $\gamma$ frente al modelo mejorado, con controles de pesos aleatorios y de serie cruda (H5).
+\end{enumerate}
+
+\begin{table}[h]
+\centering\footnotesize
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\textwidth}{@{}>{\raggedright\arraybackslash}p{1.6cm}>{\raggedright\arraybackslash}p{1.3cm}>{\raggedright\arraybackslash}p{1.1cm}>{\raggedright\arraybackslash}X>{\raggedright\arraybackslash}p{4.0cm}@{}}
+\toprule
+Vacío & Hipótesis & Objetivo & Indicador & Criterio de logro \\
+\midrule
+Línea base & -- & O1, O2 & Número de sujetos y ciclos por conjunto; $\mathcal E$, $\mathcal J$, $\gamma$ de siete modelos & Intersección de sujetos vacía; cifras reproducibles \\
+V1 & H1, H2 & O3 & $\mathcal E$ y $\mathcal J$ en prueba de control, en función de $w$ & $p<0.05$ en prueba pareada; $\varepsilon$ para $\mathcal E$ \\
+V2 & H3, H4 & O4 & $\mathcal J$, $\gamma$; $\mathcal E$ y $\mathcal J$ del ensamble & $p<0.05$ (H3); desigualdad estricta (H4) \\
+V3 & H5 & O5 & $\mathcal E$ y $\gamma$ con codificador congelado y dos controles & $p<0.05$ en prueba pareada \\
+\bottomrule
+\end{tabularx}
+\caption{Trazabilidad entre vacíos, hipótesis, objetivos, indicadores y criterios de logro.}
+\label{tab:trazabilidad}
+\end{table}
+
+%--------------------------------------------------------------------
+\section{Alcance}
+
+El estudio se limita a ciclos de seis ángulos sagitales en $101$ puntos de control y de niños con parálisis cerebral como conjunto externo. La referencia es poblacional, sin antropometría ni edad, y la ganancia de tipicidad mide cercanía a los ciclos de control, no corrección clínica. Los métodos y los resultados se presentan en los informes siguientes.
+
+%--------------------------------------------------------------------
+\begin{thebibliography}{99}
+\small
+\bibitem{neurostride2026} Proyecto NeuroStrideAI, ``Formulación matemática de los modelos: manifold de marcha control y modelo normativo por fase,'' registro de trabajo del proyecto, 23 de septiembre de 2026.
+\bibitem{schwartz2008} M. H. Schwartz y A. Rozumalski, ``The Gait Deviation Index: a new comprehensive index of gait pathology,'' \emph{Gait \& Posture}, vol. 28, no. 3, pp. 351--357, 2008.
+\bibitem{baker2009} R. Baker, J. L. McGinley, M. H. Schwartz, S. Beynon, A. Rozumalski, H. K. Graham y O. Tirosh, ``The Gait Profile Score and Movement Analysis Profile,'' \emph{Gait \& Posture}, vol. 30, no. 3, pp. 265--269, 2009, doi:10.1016/j.gaitpost.2009.05.020.
+\bibitem{halilaj2018} E. Halilaj, A. Rajagopal, M. Fiterau, J. L. Hicks, T. J. Hastie y S. L. Delp, ``Machine learning in human movement biomechanics: best practices, common pitfalls, and new opportunities,'' \emph{Journal of Biomechanics}, vol. 81, pp. 1--11, 2018.
+\bibitem{samadi2024} F. Samadi Kohnehshahri, A. Merlo, D. Mazzoli, M. C. Bo y R. Stagni, ``Machine learning applied to gait analysis data in cerebral palsy and stroke: a systematic review,'' \emph{Gait \& Posture}, vol. 111, pp. 105--121, 2024, doi:10.1016/j.gaitpost.2024.04.007.
+\bibitem{kidzinski2020} \L. Kidzi\'nski, B. Yang, J. L. Hicks, A. Rajagopal, S. L. Delp y M. H. Schwartz, ``Deep neural networks enable quantitative movement analysis using single-camera videos,'' \emph{Nature Communications}, vol. 11, 2020, doi:10.1038/s41467-020-17807-z.
+\bibitem{saeb2017} S. Saeb, L. Lonini, A. Jayaraman, D. C. Mohr y K. P. Kording, ``The need to approximate the use-case in clinical machine learning,'' \emph{GigaScience}, vol. 6, no. 5, gix019, 2017.
+\bibitem{kolaghassi2023} R. Kolaghassi, G. Marcelli y K. Sirlantzis, ``Deep learning models for stable gait prediction applied to exoskeleton reference trajectories for children with cerebral palsy,'' \emph{IEEE Access}, vol. 11, pp. 31962--31976, 2023.
+\bibitem{ferrari2019} A. Ferrari, L. Bergamini, G. Guerzoni, S. Calderara, N. Bicocchi, G. Vitetta, C. Borghi, R. Neviani y A. Ferrari, ``Gait-based diplegia classification using LSMT networks,'' \emph{Journal of Healthcare Engineering}, vol. 2019, art. 3796898, 2019.
+\bibitem{wang2024} S.-J. Wang, T. Tabashum, K. M. Kruger, J. J. Krzak, A. Graf, R. S. Chafetz, J. Davids y A. Bagley, ``Creating an autoencoder single summary metric to assess gait quality to compare surgical outcomes in children with cerebral palsy: the Shriners Gait Index (SGI),'' \emph{Journal of Biomechanics}, vol. 168, 2024, doi:10.1016/j.jbiomech.2024.112092.
+\bibitem{pang2025} Z. Pang, Z. Li, Y. Li, B. Hu, Q. Wang, H. Yu y W. Cao, ``Gait phase recognition of children with cerebral palsy via deep learning based on IMU data from a soft ankle exoskeleton,'' \emph{Frontiers in Bioengineering and Biotechnology}, vol. 13, 2025, doi:10.3389/fbioe.2025.1679812.
+\bibitem{hinton2006} G. E. Hinton y R. R. Salakhutdinov, ``Reducing the dimensionality of data with neural networks,'' \emph{Science}, vol. 313, no. 5786, pp. 504--507, 2006.
+\bibitem{vincent2008} P. Vincent, H. Larochelle, Y. Bengio y P.-A. Manzagol, ``Extracting and composing robust features with denoising autoencoders,'' en \emph{Proc. ICML}, 2008, pp. 1096--1103.
+\bibitem{cho2014} K. Cho et al., ``Learning phrase representations using RNN encoder--decoder for statistical machine translation,'' en \emph{Proc. EMNLP}, 2014, pp. 1724--1734.
+\bibitem{pascanu2013} R. Pascanu, T. Mikolov y Y. Bengio, ``On the difficulty of training recurrent neural networks,'' en \emph{Proc. ICML}, PMLR vol. 28, pp. 1310--1318, 2013.
+\bibitem{rasmussen2006} C. E. Rasmussen y C. K. I. Williams, \emph{Gaussian Processes for Machine Learning}. Cambridge, MA: MIT Press, 2006.
+\bibitem{starke2022} S. Starke, I. Mason y T. Komura, ``DeepPhase: periodic autoencoders for learning motion phase manifolds,'' \emph{ACM Transactions on Graphics}, vol. 41, no. 4, 2022.
+\bibitem{das2024timesfm} A. Das, W. Kong, R. Sen y Y. Zhou, ``A decoder-only foundation model for time-series forecasting,'' en \emph{Proc. 41st International Conference on Machine Learning}, PMLR vol. 235, pp. 10148--10167, 2024.
+\bibitem{timesfm25} Google Research, ``TimesFM 2.5 (200 millones de parámetros),'' repositorio y ficha del modelo, github.com/google-research/timesfm, actualización del 15 de septiembre de 2025.
+\bibitem{woo2024} G. Woo, C. Liu, A. Kumar, C. Xiong, S. Savarese y D. Sahoo, ``Unified training of universal time series forecasting transformers,'' en \emph{Proc. 41st International Conference on Machine Learning}, PMLR vol. 235, pp. 53140--53164, 2024.
+\bibitem{ansari2024chronos} A. F. Ansari et al., ``Chronos: learning the language of time series,'' \emph{Transactions on Machine Learning Research}, 2024 (arXiv:2403.07815).
+\bibitem{goswami2024moment} M. Goswami, K. Szafer, A. Choudhry, Y. Cai, S. Li y A. Dubrawski, ``MOMENT: a family of open time-series foundation models,'' en \emph{Proc. 41st International Conference on Machine Learning}, PMLR vol. 235, pp. 16115--16152, 2024.
+\bibitem{kim2022revin} T. Kim, J. Kim, Y. Tae, C. Park, J.-H. Choi y J. Choo, ``Reversible instance normalization for accurate time-series forecasting against distribution shift,'' en \emph{Proc. ICLR}, 2022.
+\bibitem{akbarifar2025} F. Akbarifar, N. Maghsoodi, S. P. Dukelow, S. H. Scott y P. Mousavi, ``Reducing robotic upper-limb assessment time while maintaining precision: a time series foundation model approach,'' arXiv:2511.00193, 2025.
+\bibitem{dey2025} S. Dey y D. Paez-Granados, ``PathoFM: toward a foundation model for pathological gait,'' taller \emph{Learning from Time-Series for Health}, NeurIPS 2025.
+\end{thebibliography}
+
+\end{document}

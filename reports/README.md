@@ -10,4 +10,8 @@ Las diapositivas (diapositivas) resumen el estudio para la presentación de segu
 
 El informe de métodos (informe_metodos) describe los objetivos, las hipótesis, los datos, las modificaciones propuestas, el protocolo experimental y el diseño planeado del experimento con un modelo fundacional, previos a la ejecución del protocolo final.
 
+El informe de introducción (informe_introduccion) presenta la revisión bibliográfica con su método, el vacío y la incoherencia identificados, la pregunta y las hipótesis con contenido matemático, y los objetivos medibles.
+
+El informe de resultados y discusión (informe_resultados) sigue el formato IMRAD: resume los métodos, presenta diez resultados numerados que contrastan las hipótesis, y discute las interpretaciones, los aportes y las limitaciones.
+
 Las cifras de los informes provienen de los archivos de results/. Las tablas más recientes y su descripción se encuentran en results/README.md.
