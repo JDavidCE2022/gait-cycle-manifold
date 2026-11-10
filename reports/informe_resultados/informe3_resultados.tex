@@ -40,6 +40,20 @@
 
 \begin{document}
 
+\noindent\fbox{\parbox{\dimexpr\textwidth-2\fboxsep-2\fboxrule\relax}{%
+\small\textbf{Visto bueno del tutor científico y firma del estudiante}\\[34pt]
+\begin{minipage}[t]{0.47\linewidth}\centering
+\rule{\linewidth}{0.4pt}\\[2pt]
+Juan David Martínez Vargas\\ Tutor científico, Universidad EAFIT\\[12pt]
+\rule{0.6\linewidth}{0.4pt}\\[2pt] Fecha
+\end{minipage}\hfill
+\begin{minipage}[t]{0.47\linewidth}\centering
+\rule{\linewidth}{0.4pt}\\[2pt]
+Jesús David Cantellón Espitia\\ Estudiante, Universidad EAFIT\\[12pt]
+\rule{0.6\linewidth}{0.4pt}\\[2pt] Fecha
+\end{minipage}}}
+
+\vspace{10pt}
 \begin{center}
 {\large\bfseries Resultados y discusión de un autoencoder recurrente de ciclos de marcha:\\ cierre del ciclo, eliminación de ruido y codificador fundacional congelado}\\[8pt]
 Jesús David Cantellón Espitia\\
@@ -53,6 +67,9 @@ Jesús David Cantellón Espitia\\
 \end{abstract}
 
 \noindent\textbf{Palabras clave:} análisis de marcha, autoencoder, red recurrente, cierre de ciclo, modelo fundacional de series de tiempo.
+
+\medskip
+\noindent\textbf{Ajustes respecto de las entregas anteriores.} El Informe 1 (introducción) se presenta por primera vez con este informe. El Informe 2 (métodos) se actualizó el 8 de noviembre de 2026 con los siguientes ajustes: (a) los objetivos específicos se reformularon como metas medibles, iguales a las del Informe 1; (b) en H2 se fijó el umbral $\varepsilon=0.23$\gr{} y en H4 la comparación pasó a ser frente al promedio de los miembros del ensamble; (c) la sección del codificador fundacional describe el diseño ejecutado y sus dos controles, en lugar del diseño planeado; (d) se corrigieron tres datos desactualizados (error del modelo original reproducido de 5.01\gr{} a 4.99\gr, tipicidad de los modelos mejorados y enlace al repositorio). La subsección~\ref{sec:desv} detalla las desviaciones respecto del plan.
 
 %====================================================================
 \section{Introducción}
@@ -609,24 +626,5 @@ Bloque & Agrupación & Decaimiento & Características & $\mathcal E$ (\gr) & $\m
 \end{tabular}
 \caption{Exploración en el conjunto de validación, con una semilla, ordenada por error. Se eligió la primera fila. Los bloques 10 y 20 corresponden a los índices 9 y 19 del código.}
 \end{table}
-
-\vspace{1.2cm}
-\begin{center}\textbf{Firmas}\end{center}
-\vspace{1.4cm}
-\noindent
-\begin{minipage}[t]{0.46\textwidth}
-\centering
-\rule{\linewidth}{0.4pt}\\[3pt]
-Jesús David Cantellón Espitia\\ Estudiante, Universidad EAFIT\\ Práctica Investigativa III\\[1.4cm]
-\rule{\linewidth}{0.4pt}\\[3pt]
-Fecha
-\end{minipage}\hfill
-\begin{minipage}[t]{0.46\textwidth}
-\centering
-\rule{\linewidth}{0.4pt}\\[3pt]
-Juan David Martínez Vargas\\ Tutor científico, Universidad EAFIT\\ \phantom{x}\\[1.4cm]
-\rule{\linewidth}{0.4pt}\\[3pt]
-Fecha
-\end{minipage}
 
 \end{document}
